@@ -12,7 +12,7 @@
 #include "Property.hpp"
 
 class Game {
-public:
+private:
     Board* board;
     std::vector<Player*> players;
     std::vector<int> turnOrder;
