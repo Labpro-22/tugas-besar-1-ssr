@@ -12,7 +12,7 @@
 #include "Property.hpp"
 
 class Game {
-private:
+public:
     Board* board;
     std::vector<Player*> players;
     std::vector<int> turnOrder;
@@ -27,7 +27,6 @@ private:
     TransactionLogger* Logger;
     bool isRunning;
     
-public:
     void startGame(std::string filename);
     void nextTurn();
     Player* getCurrentPlayer();
