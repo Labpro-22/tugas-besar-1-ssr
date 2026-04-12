@@ -14,7 +14,6 @@ public:
 
     void roll();
     void setManual(int x, int y);
-
     int  getTotal() const;
     bool isDouble() const;
     int  getDie1() const;
