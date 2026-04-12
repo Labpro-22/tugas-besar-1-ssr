@@ -26,7 +26,8 @@ private:
     CardDeck<SkillCard*>* skillDeck;
     TransactionLogger* Logger;
     bool isRunning;
-    
+
+public:
     void startGame(std::string filename);
     void nextTurn();
     Player* getCurrentPlayer();
