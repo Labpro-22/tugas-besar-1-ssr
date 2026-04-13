@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+
 #include "Board.hpp"
 #include "Player.hpp"
 #include "Dice.hpp"
@@ -10,11 +11,15 @@
 #include "SkillCard.hpp"
 #include "TransactionLogger.hpp"
 #include "Property.hpp"
+#include "Container.hpp"
+
+
 
 class Game {
 private:
     Board* board;
     std::vector<Player*> players;
+    Container* gameScreen;
     std::vector<int> turnOrder;
     int currentTurnIndex;
     int currentTurn;
@@ -28,6 +33,9 @@ private:
     bool isRunning;
 
 public:
+    Game(Board* board, Container* gameScreen, int maxTurn, int startingBalance, TransactionLogger* logger);
+    ~Game();
+    
     void startGame(std::string filename);
     void nextTurn();
     Player* getCurrentPlayer();

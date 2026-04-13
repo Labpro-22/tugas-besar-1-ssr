@@ -5,7 +5,9 @@
 #include "Board.hpp"
 #include "Property.hpp"
 #include "SkillCard.hpp"
-#include "raylib.h"
+#include <raylib-cpp.hpp>
+
+
 
 enum class PlayerStatus {
     ACTIVE,
@@ -13,9 +15,11 @@ enum class PlayerStatus {
     JAILED
 };
 
+
+
 class Player{
-Protected:
-    std::stringusername;
+protected:
+    std::string username;
     int money;
     int position;
     PlayerStatus status;
@@ -30,6 +34,9 @@ Protected:
     int consecutiveDoubles;
 
 public:
+    Player(std::string username, int playerIndex, int initialMoney);
+    virtual ~Player();
+
     void moveTo(int position);
     int moveForward(int steps, Board* board);
     void addProperty(Property* property);
@@ -49,4 +56,24 @@ public:
     bool isJailed();
 
     virtual int chooseInput(std::vector<int> choices) = 0;
+};
+
+
+
+class HumanPlayer : public Player {
+public:
+    HumanPlayer(std::string username, int playerIndex, int initialMoney);
+    ~HumanPlayer();
+
+    int chooseInput(std::vector<int> choices) override;
+};
+
+
+
+class BotPlayer : public Player {
+public:
+    BotPlayer(std::string username, int playerIndex, int initialMoney);
+    ~BotPlayer();
+    
+    int chooseInput(std::vector<int> choices) override;
 };

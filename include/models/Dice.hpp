@@ -2,7 +2,7 @@
 
 #include <functional>
 
-class Dice{
+class Dice {
 private:
     int num1;
     int num2;

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <map>
+
 #include "Tile.hpp"
 
 class Board {
@@ -12,9 +13,12 @@ private:
     int totalTiles;
 
 public:
+    Board(int totalTiles);
+    ~Board();
+
     int getTileCount();
-    Tile* getTile(int index);
-    Tile* getTileByCode(std::string code);
+    Tile  *getTile(int index);
+    Tile *getTileByCode(std::string code);
     int getNextTileIndex(int current, int steps);
     int findNearestStation(int fromIndex);
     int getJailIndex();
