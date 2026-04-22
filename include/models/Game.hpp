@@ -6,13 +6,9 @@
 #include "Board.hpp"
 #include "Player.hpp"
 #include "Dice.hpp"
-#include "CardDeck.hpp"
-#include "ActionCard.hpp"
-#include "SkillCard.hpp"
+#include "Card.hpp"
 #include "TransactionLogger.hpp"
 #include "Property.hpp"
-#include "Container.hpp"
-
 
 
 class Game {
