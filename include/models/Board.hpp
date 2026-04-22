@@ -5,6 +5,7 @@
 #include <map>
 
 #include "Tile.hpp"
+#include "AppException.hpp"
 
 class Board {
 private:

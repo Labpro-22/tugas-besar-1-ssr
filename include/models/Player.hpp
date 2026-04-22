@@ -44,18 +44,20 @@ public:
     void addCard(SkillCard* card);
     SkillCard* removeCard(int index);
     int getCardCount();
-    int getTotalWealth();
     std::vector<Property*> getPropertiesByColor(raylib::Color color);
     int getOwnedRailroadCount();
     int getOwnedUtilityCount();
-    bool canAfford(int amount);
-    int getMaxLiquidationValue();
     void printProperties();
     bool isActive();
     bool isBankrupt();
     bool isJailed();
-    bool tryLiquidateAsset();
-
+    
+    /*====Financial====*/
+    bool canAfford(int amount);
+    void addMoney(int amount);  // (salary, rent, dll.)
+    void deductMoney(int amount);   // pay money; clamps to 0 if insufficient (bankruptcy handled by caller)
+    int getTotalWealth();
+    int getMaxLiquidationValue();
     virtual int chooseInput(std::vector<int> choices) = 0;
 };
 
