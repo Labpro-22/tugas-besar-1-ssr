@@ -4,39 +4,59 @@
 #include <string>
 #include <vector>
 #include <raylib-cpp.hpp>
+#include "Dice.hpp"
 
+using namespace std;
 enum class PropertyStatus {
     BANK,
     OWNED,
     MORTGAGED
 };
 
-
-
 class Property {
 protected:
     int ID;
-    std::string code;
-    std::string name;
-    std::string type;
+    string code;
+    string name;
+    string type;
     int price;
     int mortgageValue;
     int ownerID;
     PropertyStatus status;
+    int festivalMultiplier;
+    int festivalDuration;
 
-    virtual int calculateRent(int diceTotal, int ownedCountOfType) = 0;
+    virtual int calculateRent(int diceNum, int ownedCountOfType) = 0;
 
 public:
-    Property(int ID, std::string code, std::string name, std::string type, int price, int mortgageValue);
+    Property(int ID, string code, string name, string type, int price, int mortgageValue);
     virtual ~Property() = default;
 
-    int mortgage();
+    virtual int mortgage();
     int unmortgage();
 
     virtual int getTotalValue() const;
     virtual int getSellValue() const;
+    virtual void printCertificate(stringstream& os) const;
 
-    virtual void printCertificate(std::stringstream& output) const;
+    /*=== Getters ===*/
+    int getID() const { return ID; }
+    string getCode() const { return code; }
+    string getName() const { return name; }
+    string getType() const { return type; }
+    int getPrice() const { return price; }
+    int getMortgageValue() const { return mortgageValue; }
+    int getOwnerID() const { return ownerID; }
+    PropertyStatus getStatus() const { return status; }
+    int getRent(int diceNum, int ownedCountOfType) {
+        return calculateRent(diceNum, ownedCountOfType);
+    }
+
+    /*===FESTIVAL===*/
+    void applyFestival();
+    void decrementFestival();
+    void resetFestival();
+
 };
 
 
@@ -46,27 +66,23 @@ public:
     raylib::Color colorGroup;
     int housePrice;
     int hotelPrice;
-    std::vector<int> rentLevels;
-    int buildingCount;
-    int festivalMultiplier;
-    int festivalDuration;
+    vector<int> rentLevels;
+    int buildingCount; // 0-4 : rumah, 5 : hotel
 
-    StreetProperty(int ID, std::string code, std::string name, int price, int mortgageValue, raylib::Color color, int housePrice, int hotelPrice, std::vector<int> rentLevels);
+    StreetProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color, int housePrice, int hotelPrice, vector<int> rentLevels);
     ~StreetProperty();
 
-    int calculateRent(int diceTotal, int ownedCountOfType) override;
+    int Property::mortgage() override;
 
+    int calculateRent(int diceNum, int ownedCountOfType) override;
+    int sellAllBuildings();
+    int getBuildCost() const;
     bool canBuild() const;
     void build();
-    int sellBuilding();
-
-    void applyFestival();
-    void decrementFestival();
-    void resetFestival();
+    int sellAllBuilding();
 
     int getTotalValue() const override;
     int getSellValue() const override;
-
     bool isMonopolized() const;
 };
 
@@ -74,18 +90,18 @@ public:
 
 class RailroadProperty : public Property {
 public:
-    RailroadProperty(int ID, std::string code, std::string name, int price, int mortgageValue);
+    RailroadProperty(int ID, string code, string name, int price, int mortgageValue);
     ~RailroadProperty();
 
-    int calculateRent(int diceTotal, int ownedCountOfType) override;
+    int calculateRent(int diceNum, int ownedCountOfType) override;
 };
 
 
 
 class UtilityProperty : public Property {
 public:
-    UtilityProperty(int ID, std::string code, std::string name, int price, int mortgageValue);
+    UtilityProperty(int ID, string code, string name, int price, int mortgageValue);
     ~UtilityProperty();
     
-    int calculateRent(int diceTotal, int ownedCountOfType) override;
+    int calculateRent(int diceNum, int ownedCountOfType) override;
 };
