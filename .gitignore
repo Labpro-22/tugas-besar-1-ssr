@@ -42,3 +42,7 @@ bin/
 
 # debug information files
 *.dwo
+
+# Mac OS metadata files
+.DS_Store
+*/**/.DS_Store
