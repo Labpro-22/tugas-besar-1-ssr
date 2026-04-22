@@ -1,5 +1,7 @@
 #include "Board.hpp"
 
+#include "Property.hpp"
+
 Board::Board(int totalTiles)
     : tiles(totalTiles > 0 ? (totalTiles) : 0),
       totalTiles(totalTiles) {}
@@ -39,6 +41,38 @@ int Board::getNextTileIndex(int current, int steps) {
     return ((raw % totalTiles) + totalTiles) % totalTiles;
 }
 
+int Board::findNearestStation(int fromIndex) {
+    if (totalTiles <= 0) {
+        throw GameException("Board", "Cannot find nearest station on an empty board");
+    }
+
+    const int normalizedCurrent = ((fromIndex % totalTiles) + totalTiles) % totalTiles;
+    int bestIndex = -1;
+    int bestDistance = totalTiles + 1;
+
+    for (Tile* tile : tiles) {
+        auto* propertyTile = dynamic_cast<PropertyTile*>(tile);
+        if (propertyTile == nullptr || propertyTile->property == nullptr) {
+            continue;
+        }
+        if (propertyTile->property->getType() != "RAILROAD") {
+            continue;
+        }
+
+        const int distance = ((tile->index - normalizedCurrent) + totalTiles) % totalTiles;
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            bestIndex = tile->index;
+        }
+    }
+
+    if (bestIndex == -1) {
+        throw GameException("Board", "No railroad tile found");
+    }
+
+    return bestIndex;
+}
+
 int Board::getJailIndex() {
     for(Tile* tile: tiles){
         if (dynamic_cast<const JailTile*>(tile) != nullptr){
@@ -73,5 +107,21 @@ void Board::setTile(Tile* tile, int idx) {
     tile->index = idx;
     tiles[idx] = tile;
     tileMap[tile->code] = tile;
+}
+
+std::vector<int> Board::getTilesByColor(raylib::Color color) {
+    std::vector<int> result;
+    for (Tile* tile : tiles) {
+        auto* propertyTile = dynamic_cast<PropertyTile*>(tile);
+        if (propertyTile == nullptr || propertyTile->property == nullptr) {
+            continue;
+        }
+
+        auto* street = dynamic_cast<StreetProperty*>(propertyTile->property);
+        if (street != nullptr && street->colorGroup == color) {
+            result.push_back(tile->index);
+        }
+    }
+    return result;
 }
 
