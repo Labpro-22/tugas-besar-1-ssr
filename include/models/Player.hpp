@@ -4,10 +4,10 @@
 #include <vector>
 #include "Board.hpp"
 #include "Property.hpp"
-#include "SkillCard.hpp"
+#include "Card.hpp"
 #include <raylib-cpp.hpp>
 
-
+class Board;
 
 enum class PlayerStatus {
     ACTIVE,
@@ -54,6 +54,7 @@ public:
     bool isActive();
     bool isBankrupt();
     bool isJailed();
+    bool tryLiquidateAsset();
 
     virtual int chooseInput(std::vector<int> choices) = 0;
 };

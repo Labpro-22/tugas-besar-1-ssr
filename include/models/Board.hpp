@@ -13,7 +13,7 @@ private:
     int totalTiles;
 
 public:
-    Board(int totalTiles);
+    Board(int totalTiles) : totalTiles(totalTiles) {}
     ~Board();
 
     int getTileCount();

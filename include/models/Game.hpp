@@ -6,37 +6,37 @@
 #include "Board.hpp"
 #include "Player.hpp"
 #include "Dice.hpp"
-#include "CardDeck.hpp"
-#include "ActionCard.hpp"
-#include "SkillCard.hpp"
+#include "Card.hpp"
 #include "TransactionLogger.hpp"
 #include "Property.hpp"
-#include "Container.hpp"
 
-
+class Board;
 
 class Game {
 private:
-    Board* board;
-    std::vector<Player*> players;
-    Container* gameScreen;
+    
+    Board *board;
+    std::vector<Player *> players;
     std::vector<int> turnOrder;
     int currentTurnIndex;
     int currentTurn;
     int maxTurn;
     int startingBalance;
-    std::vector<Dice*> dices;
-    CardDeck<ActionCard*>* chanceDeck;
-    CardDeck<ActionCard*>* communityDeck;
-    CardDeck<SkillCard*>* skillDeck;
-    TransactionLogger* Logger;
-    bool isRunning;
+    std::array<Dice, 2> dices;
+    TransactionLogger *Logger;
+
+    using GameCommand = std::function<int(const std::vector<std::string>&)>;
+    std::unordered_map<std::string, GameCommand> gameCommands;
 
 public:
-    Game(Board* board, Container* gameScreen, int maxTurn, int startingBalance, TransactionLogger* logger);
-    ~Game();
+    Game();
+    Game(std::string &configPath);
+
+    ~Game() = default;
     
-    void startGame(std::string filename);
+    void startGame();
+    void runCommand(std::string &command);
+
     void nextTurn();
     Player* getCurrentPlayer();
     bool checkWinCondition();

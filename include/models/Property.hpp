@@ -30,6 +30,8 @@ public:
     Property(int ID, std::string code, std::string name, std::string type, int price, int mortgageValue);
     virtual ~Property() = default;
 
+    std::string &getType() { return type; }
+
     int mortgage();
     int unmortgage();
 

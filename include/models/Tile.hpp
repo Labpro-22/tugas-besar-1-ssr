@@ -2,11 +2,15 @@
 
 #include <sstream>
 #include <string>
+#include <algorithm>
+#include <random>
+#include <type_traits>
 
 #include "Game.hpp"
 #include "Player.hpp"
 
-
+class Player;
+class Game;
 
 class Tile {
 public:
@@ -145,3 +149,6 @@ public:
 	void getDisplayInfo(std::stringstream& output) const override;
 	void getTileType(std::stringstream& output) const override;
 };
+
+
+

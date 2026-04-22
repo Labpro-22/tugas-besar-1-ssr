@@ -7,6 +7,9 @@
 #include "Player.hpp"
 
 
+class Player;
+class Game;
+
 
 class Card {
 public:
@@ -167,7 +170,7 @@ private:
     std::vector<T*> discardedPile;
 
 public:
-    CardDeck();
+    CardDeck() = default;
     ~CardDeck();
 
     T* draw();
@@ -176,4 +179,5 @@ public:
     int size() const;
     bool isEmpty() const;
     void addCard(T* card);
+
 };
