@@ -3,20 +3,15 @@
 #include <vector>
 #include <string>
 
-
-
 class LogEntry {
 public:
     int turn;
-    int playerID;
+    std::string playerName;
     std::string action;
     std::string detail;
 
-    std::string toString();
-
+    std::string toString() const;
 };
-
-
 
 class TransactionLogger {
 private:
@@ -24,11 +19,12 @@ private:
 
 public:
     TransactionLogger();
-    ~TransactionLogger() = default;
 
-    void log(LogEntry entry);
-    std::string getRecentEntry(int n);
-    void showRecentEntry(int n);
-    void showRecentEntry(std::stringstream& output, int n);
-    int entryCount();
+    void log(int turn, const std::string& playerName,
+             const std::string& action,
+             const std::string& detail);
+
+    std::string getRecentEntry(int n) const;
+    void showRecentEntry(int n) const;
+    int entryCount() const;
 };
