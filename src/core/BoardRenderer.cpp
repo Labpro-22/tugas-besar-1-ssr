@@ -62,7 +62,7 @@ void BoardRenderer::DrawTile(int index, raylib::Color color) {
 }
 
 void BoardRenderer::render() {
-  DrawCube({0.0f, 0.0f, 0.0f}, boardWidth, 1.0f, boardHeight, GRAY);
+  DrawCube({0.0f, 0.0f, 0.0f}, boardWidth, 1.0f, boardHeight, LIGHTGRAY);
   for (int i = 0; i < fmin(tileColors.size(), horizontalTileCount * 2 + verticalTileCount * 2 - 4); i++) {
     DrawTile(i, tileColors[i % tileColors.size()]);
   }

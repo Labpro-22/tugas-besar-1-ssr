@@ -5,6 +5,7 @@
 #include "raylib-cpp.hpp"
 #include "rlgl.h"
 #include "EntityRenderer.hpp"
+#include "InterfaceRenderer.hpp"
 
 class Renderer {
 private:
@@ -13,6 +14,7 @@ private:
     float angleY = 0.0f;
     Camera3D camera;
     std::vector<EntityRenderer*> entityRenderers;
+    std::vector<InterfaceRenderer*> interfaceRenderers;
 
 public:
     Renderer(const char* title) : Renderer(title, 800, 600) {};
@@ -32,7 +34,20 @@ public:
         return *this;
     }
 
+    Renderer& WithInterfaceRenderer(InterfaceRenderer* interfaceRenderer) {
+        interfaceRenderers.push_back(interfaceRenderer);
+        return *this;
+    }
+
     ~Renderer() {
         delete window;
+        for (auto entityRenderer : entityRenderers) {
+            delete entityRenderer;
+        }
+        for (auto interfaceRenderer : interfaceRenderers) {
+            delete interfaceRenderer;
+        }
     }
+private:
+    bool isMouseOverInterface();
 };
