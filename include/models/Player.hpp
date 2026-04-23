@@ -6,8 +6,8 @@
 #include "Property.hpp"
 #include "Card.hpp"
 #include <raylib-cpp.hpp>
+using namespace std;
 
-class Board;
 
 enum class PlayerStatus {
     ACTIVE,
@@ -19,12 +19,12 @@ enum class PlayerStatus {
 
 class Player{
 protected:
-    std::string username;
+    string username;
     int money;
     int position;
     PlayerStatus status;
-    std::vector<Property*> properties;
-    std::vector<SkillCard*> hand;
+    vector<Property*> properties;
+    vector<SkillCard*> hand;
     int playerIndex;
     bool isShieldActive;
     int discount;
@@ -34,8 +34,17 @@ protected:
     int consecutiveDoubles;
 
 public:
-    Player(std::string username, int playerIndex, int initialMoney);
+    Player(string username, int playerIndex, int initialMoney);
     virtual ~Player();
+
+    // GETTER
+    int getPlayerIndex(){ return playerIndex;}
+    string getUsername(){ return username;}
+    int getMoney(){ return money;}
+    int getCardCount();
+    vector<Property*> getPropertiesByColor(raylib::Color color);
+    int getOwnedRailroadCount();
+    int getOwnedUtilityCount();
 
     void moveTo(int position);
     int moveForward(int steps, Board* board);
@@ -43,10 +52,6 @@ public:
     void removeProperty(Property* property);
     void addCard(SkillCard* card);
     SkillCard* removeCard(int index);
-    int getCardCount();
-    std::vector<Property*> getPropertiesByColor(raylib::Color color);
-    int getOwnedRailroadCount();
-    int getOwnedUtilityCount();
     void printProperties();
     bool isActive();
     bool isBankrupt();
@@ -58,25 +63,25 @@ public:
     void deductMoney(int amount);   // pay money; clamps to 0 if insufficient (bankruptcy handled by caller)
     int getTotalWealth();
     int getMaxLiquidationValue();
-    virtual int chooseInput(std::vector<int> choices) = 0;
+    virtual int chooseInput(vector<int> choices) = 0;
 };
 
 
 
 class HumanPlayer : public Player {
 public:
-    HumanPlayer(std::string username, int playerIndex, int initialMoney);
+    HumanPlayer(string username, int playerIndex, int initialMoney);
     ~HumanPlayer();
 
-    int chooseInput(std::vector<int> choices) override;
+    int chooseInput(vector<int> choices) override;
 };
 
 
 
 class BotPlayer : public Player {
 public:
-    BotPlayer(std::string username, int playerIndex, int initialMoney);
+    BotPlayer(string username, int playerIndex, int initialMoney);
     ~BotPlayer();
     
-    int chooseInput(std::vector<int> choices) override;
+    int chooseInput(vector<int> choices) override;
 };
