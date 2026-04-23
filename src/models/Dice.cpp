@@ -15,9 +15,10 @@ void Dice::roll() {
     num2 = randFunc(1, 6);
 }
 
-void Dice::setManual(int x, int y) {
+int Dice::setManual(int x, int y) {
     num1 = x;
     num2 = y;
+    return x + y;
 }
 
 int Dice::getTotal() const { return num1 + num2; }

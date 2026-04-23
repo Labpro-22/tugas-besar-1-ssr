@@ -25,6 +25,10 @@ int StreetProperty::calculateRent(int diceNum, int ownedCountOfType, bool isMono
  
     return baseRent * festivalMultiplier;
 }
+
+int StreetProperty::mortgage(){
+    return 0; // TODO
+}
  
 bool StreetProperty::canBuild() const {
     return buildingCount < 5;

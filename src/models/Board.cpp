@@ -118,7 +118,7 @@ std::vector<int> Board::getTilesByColor(raylib::Color color) {
         }
 
         auto* street = dynamic_cast<StreetProperty*>(propertyTile->property);
-        if (street != nullptr && street->colorGroup == color) {
+        if (street != nullptr && street->getColorGroup() == color) {
             result.push_back(tile->index);
         }
     }

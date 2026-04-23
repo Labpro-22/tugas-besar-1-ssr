@@ -75,8 +75,8 @@ void PropertyTile::onLanded(Player* player, Game* game) {
             throw GameException("PropertyTile", "Street property type did not match StreetProperty instance.");
         }
 
-        const std::vector<Property*> ownedSameColor = owner->getPropertiesByColor(street->colorGroup);
-        const std::vector<int> boardSameColor = game->getBoard()->getTilesByColor(street->colorGroup);
+        const std::vector<Property*> ownedSameColor = owner->getPropertiesByColor(street->getColorGroup());
+        const std::vector<int> boardSameColor = game->getBoard()->getTilesByColor(street->getColorGroup());
         const bool monopolized = !boardSameColor.empty() &&
                                  ownedSameColor.size() == boardSameColor.size();
 

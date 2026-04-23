@@ -32,11 +32,14 @@ protected:
     virtual int calculateRent(int diceNum, int ownedCountOfType, bool isMono) = 0;
     
     public:
+    Property(int ID, string code, string name, string type, int price, int mortgageValue, raylib::Color color, int festivalMultiplier, int festivalDuration);
     Property(int ID, string code, string name, string type, int price, int mortgageValue, raylib::Color color);
+    Property(int ID, string code, string name, string type, int price, int mortgageValue);
+
     virtual ~Property() = default;
     
     virtual int mortgage();
-    void unmortgage();
+    int unmortgage();
     
     virtual int getTotalValue() const;
     virtual int getSellValue() const;
@@ -51,9 +54,17 @@ protected:
     int getMortgageValue() const { return mortgageValue; }
     int getOwnerID() const { return ownerID; }
     PropertyStatus getStatus() const { return status; }
+    int getFestivalMultiplier() const { return festivalMultiplier;  }
+    int getFestivalDuration() const { return festivalDuration; }
     int getRent(int diceNum, int ownedCountOfType) {
-        return calculateRent(diceNum, ownedCountOfType);
+        return calculateRent(diceNum, ownedCountOfType, false);
     }
+    raylib::Color getColorGroup() { return colorGroup; }
+
+
+    /*=== Setters ===*/
+    void setOwnerID(int playerID){ ownerID = playerID; }
+    void setStatus(PropertyStatus status){ status = status; }
 
     /*===FESTIVAL===*/
     void applyFestival();
@@ -70,7 +81,7 @@ public:
     int hotelPrice;
     vector<int> rentLevels;
     int buildingCount; // 0-4 : rumah, 5 : hotel
-
+    
     StreetProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color, int housePrice, int hotelPrice, vector<int> rentLevels);
     ~StreetProperty();
 
@@ -81,6 +92,7 @@ public:
     int getBuildCost() const;
     bool canBuild() const;
     void build();
+    int sellAllBuildings() { return 0; };
 
     int getBuildingCount()const {return buildingCount;}
     int getTotalValue() const override;
@@ -93,6 +105,7 @@ public:
 class RailroadProperty : public Property {
 public:
     RailroadProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color);
+    RailroadProperty(int ID, string code, string name, int price, int mortgageValue);
     ~RailroadProperty();
 
     int calculateRent(int diceNum, int ownedCountOfType, bool isMono) override;
@@ -103,6 +116,7 @@ public:
 class UtilityProperty : public Property {
 public:
     UtilityProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color);
+    UtilityProperty(int ID, string code, string name, int price, int mortgageValue);
     ~UtilityProperty();
     
     int calculateRent(int diceNum, int ownedCountOfType, bool isMono) override;

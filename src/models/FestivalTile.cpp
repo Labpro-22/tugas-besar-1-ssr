@@ -25,7 +25,7 @@ void FestivalTile::onLanded(Player* player, Game* game) {
     }
 
     std::vector<StreetProperty*> eligibleProperties;
-    for (Property* ownedProperty : player->getProperties()) {
+    for (Property* ownedProperty : player->getAllProperties()) {
         StreetProperty* street = dynamic_cast<StreetProperty*>(ownedProperty);
         if (street != nullptr) {
             eligibleProperties.push_back(street);

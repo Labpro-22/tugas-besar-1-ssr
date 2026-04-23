@@ -1,15 +1,15 @@
 #include <iostream>
 
 #include "Game.hpp"
+#include "Tile.hpp"
 
 Game::Game(std::string &configPath) {
-    LoadHandler *loadHandler(configPath);
-    loadHandler->load(this);
+    // LoadHandler *loadHandler(configPath);
+    // loadHandler->load(this);
 }
 
 
-Game::Game() 
-: 
+Game::Game() : 
     board(new Board(40)),
     startingBalance(1000),
     maxTurn(40)
@@ -32,8 +32,11 @@ void Game::startGame(){
     }
     else{
 
-        while(true){
+        while(isRunning){
             std::string command;
+            if(command == "LEMPAR_DADU"){
+                nextTurn();
+            }
             
         }
 
@@ -41,72 +44,75 @@ void Game::startGame(){
 }
 
 
-int Game::runCommand(std::string command){
-    std::istringstream iss(text);
-    std::vector<std::string> args;
-    std::string command, arg;
+int Game::runCommand(std::string &command){
+    // std::istringstream iss(text);
+    // std::vector<std::string> args;
+    // std::string command, arg;
 
-    iss >> command;
+    // iss >> command;
 
-    while(iss >> arg){
-        args.push_back(arg);
-    }
+    // while(iss >> arg){
+    //     args.push_back(arg);
+    // }
 
-    return gameCommands[command](args);
-}
-
-
-/*
-Game::~Game() {
-    delete board;
-    for(auto p : players) delete p;
-    for(auto d : dices) delete d;
-
-    delete chanceDeck;
-    delete communityDeck;
-    delete skillDeck;
-    delete Logger;
-}
-
-void Game::startGame(std::string filename) {
-    isRunning = true;
-    currentTurnIndex = 0;
-    currentTurn = 1;
-    // Should call SaveLoadHandlir
+    // return gameCommands[command](args);
+    return 0;
 }
 
 
 void Game::nextTurn() {
-    currentTurnIndex = (currentTurnIndex + 1) % players.size();
-    if (currentTurnIndex == 0) currentTurn++;
-    if (currentTurn > maxTurn || checkWinCondition()) endGame();
+
+    Player *currentPlayer = getCurrentPlayer();
+
+    dices.roll();
+
+    int die1 = dices.getDie1(), die2 = dices.getDie2();
+    bool isDouble = dices.isDouble();
+    int total = die1 + die2;
+
+    std::cout << "Mengocok dadu...\n";
+    std::cout << "Hasil: " << die1 << " + " << die2  << '\n';
+    std::cout << "Total: " << total << '\n';
+    if(die1 == die2){
+        std::cout << "Didapatkan dadu double!\n";
+        currentPlayer->incConsecutiveDouble();
+
+        if(currentPlayer->aboveSpeedLimit()){
+            std::cout << "Pemain '" << currentPlayer->getUsername() << "' telah melanggar batas kecepatan! Silahkan masuk penjara :)\n";
+            currentPlayer->moveTo(board, board->getJailIndex());
+        }
+        
+    }
+    
+    std::cout << "Memajukan bidak pemain '" << currentPlayer->getUsername() << "' sebanyak " << total << " petak...\n";
+    currentPlayer->moveForward(board, total);
+    
+
+    if(!isDouble){
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+
+        if(!currentPlayerIndex == 0){
+            turnPlayed++;
+            if(turnPlayed > maxTurn || hasWinner()){
+                endGame();
+            }
+        }
+    }
+
 }
 
-Player* Game::getCurrentPlayer() { return players[currentTurnIndex]; }
 
-bool Game::checkWinCondition() {
+Player* Game::getCurrentPlayer() { return players[currentPlayerIndex]; }
+
+
+bool Game::hasWinner() {
     int activeCount = 0;
-    for (auto p : players) if (p->isActive()) activeCount++;
-    return activeCount <= 1;
+    for(Player *p : players) if(p->isActive()) activeCount++;
+
+    return (activeCount == 1);
 }
 
-void Game::handleBankruptcy(Player* debtor, Player* creditor, int amount) {
-    // Handled by BankrutpcyManager
-}
-
-void Game::handleAuction(Property* property, Player* triggeredBy) {
-    // Handled by AuctionManager
-}
-
-void Game::distributeSalary(Player* player) {
-    // Handled by AuctionManager
-}
-
-void Game::removePlayer(Player* player) {
-    // Handled by BankrutpcyManager
-}
 
 void Game::endGame() {
     isRunning = false;
 }
-*/

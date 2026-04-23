@@ -20,7 +20,7 @@ void GoToJailTile::onLanded(Player* player, Game* game) {
         throw GameException("GoToJailTile", "Board cannot be null.");
     }
 
-    player->moveTo(game->getBoard()->getJailIndex());
+    player->moveTo(game->getBoard(), game->getBoard()->getJailIndex());
     player->setStatus(PlayerStatus::JAILED);
     player->setJailAttempts(0);
 }

@@ -226,7 +226,7 @@ void testStreetBuildSell() {
     assert(!jkt->canBuild());        pass("canBuild() false at hotel");
  
     // Sell hotel: refund = hotelPrice/2 = 100
-    int refund = jkt->sellBuilding();
+    int refund = jkt->sellAllBuildings();
     assert(refund == 100);           pass("Sell hotel → refund=100 (hotelPrice/2)");
     assert(jkt->buildingCount == 4); pass("buildingCount back to 4 after selling hotel");
  
@@ -238,7 +238,7 @@ void testStreetBuildSell() {
  
     // Error: sell when no buildings
     try {
-        jkt->sellBuilding();
+        jkt->sellAllBuildings();
         fail("Should throw when no buildings to sell");
     } catch (const runtime_error&) {
         pass("Throws when selling with no buildings");
@@ -279,45 +279,45 @@ void testFestival() {
     StreetProperty* jkt = makeJakarta(); // baseRent at L0 = 35
     jkt->setStatus(PropertyStatus::OWNED);
  
-    assert(jkt->festivalMultiplier == 1);
-    assert(jkt->festivalDuration   == 0);
+    assert(jkt->getFestivalMultiplier() == 1);
+    assert(jkt->getFestivalDuration()   == 0);
     pass("Initial: multiplier=1, duration=0");
  
     // Apply festival 1st time: multiplier 1→2, duration=3
     jkt->applyFestival();
-    assert(jkt->festivalMultiplier == 2);
-    assert(jkt->festivalDuration   == 3);
+    assert(jkt->getFestivalMultiplier() == 2);
+    assert(jkt->getFestivalDuration()   == 3);
     assert(jkt->getRent(0, 0) == 35 * 2); pass("After 1st festival: rent=70, duration=3");
  
     // Decrement twice
     jkt->decrementFestival();
     jkt->decrementFestival();
-    assert(jkt->festivalDuration == 1); pass("After 2 decrements: duration=1");
+    assert(jkt->getFestivalDuration() == 1); pass("After 2 decrements: duration=1");
  
     // Apply again: multiplier 2→4, duration reset to 3
     jkt->applyFestival();
-    assert(jkt->festivalMultiplier == 4);
-    assert(jkt->festivalDuration   == 3);
+    assert(jkt->getFestivalMultiplier() == 4);
+    assert(jkt->getFestivalDuration()   == 3);
     assert(jkt->getRent(0, 0) == 35 * 4); pass("After 2nd festival: rent=140, duration=3");
  
     // Apply 3rd time: multiplier 4→8 (max)
     jkt->applyFestival();
-    assert(jkt->festivalMultiplier == 8);
+    assert(jkt->getFestivalMultiplier() == 8);
     assert(jkt->getRent(0, 0) == 35 * 8); pass("After 3rd festival: rent=280 (max x8)");
  
     // Apply 4th time: multiplier stays 8, duration resets
     jkt->decrementFestival(); // duration → 2
     jkt->applyFestival();     // multiplier stays 8, duration → 3
-    assert(jkt->festivalMultiplier == 8);
-    assert(jkt->festivalDuration   == 3);
+    assert(jkt->getFestivalMultiplier() == 8);
+    assert(jkt->getFestivalDuration()   == 3);
     pass("4th festival: multiplier stays 8, duration reset to 3");
  
     // Decrement to 0: auto-reset
     jkt->decrementFestival();
     jkt->decrementFestival();
     jkt->decrementFestival(); // duration → 0 → resetFestival()
-    assert(jkt->festivalMultiplier == 1);
-    assert(jkt->festivalDuration   == 0);
+    assert(jkt->getFestivalMultiplier() == 1);
+    assert(jkt->getFestivalDuration()   == 0);
     pass("After duration reaches 0: festival auto-reset");
  
     delete jkt;
@@ -434,10 +434,10 @@ void testEdgeCases() {
 }
  
 // ============================================================
-// main
+// test main function
 // ============================================================
  
-int main() {
+void testProperty() {
     cout << "╔══════════════════════════════════════╗\n";
     cout << "║   NIMONSPOLI – Property Test Suite   ║\n";
     cout << "╚══════════════════════════════════════╝\n";
@@ -456,6 +456,5 @@ int main() {
     cout << "\n========================================\n";
     cout << "  Semua test selesai.\n";
     cout << "========================================\n";
-    return 0;
 }
  

@@ -6,6 +6,9 @@
 
 #include "Tile.hpp"
 #include "AppException.hpp"
+#include <raylib-cpp.hpp>
+
+class Tile;
 
 class Board {
 private:
@@ -14,12 +17,13 @@ private:
     int totalTiles;
 
 public:
-    Board(int totalTiles) : totalTiles(totalTiles) {}
+    Board(int totalTiles);
     ~Board();
 
     int getTileCount();
     Tile  *getTile(int index);
     Tile *getTileByCode(std::string code);
+    std::vector<int> getTilesByColor(raylib::Color color);
     int getNextTileIndex(int current, int steps);
     int findNearestStation(int fromIndex);
     int getJailIndex();

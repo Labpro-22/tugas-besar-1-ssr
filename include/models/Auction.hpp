@@ -3,8 +3,18 @@
 #include <string>
 #include <vector>
 
+#include "Player.hpp"
 #include "Property.hpp"
 #include "TransactionLogger.hpp"
+
+
+class AuctionResult {
+public:
+    Player *winner;
+    int winningBid;
+    bool sold;
+};
+
 
 class Auction {
 private:
@@ -29,6 +39,7 @@ private:
 
     void logBid(Player* bidder, int amount) const;
     void logPass(Player* passer) const;
+    void logResult(const AuctionResult& result) const;
 
     int requestForcedBid(Player* player) const;
 
@@ -41,5 +52,5 @@ public:
 
     ~Auction() = default;
 
-    void runAuction();
+    AuctionResult run();
 };

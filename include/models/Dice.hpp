@@ -13,7 +13,7 @@ public:
     explicit Dice(std::function<int(int, int)> randFunc);
 
     void roll();
-    void setManual(int x, int y);
+    int setManual(int x, int y);
     int  getTotal() const;
     bool isDouble() const;
     int  getDie1() const;

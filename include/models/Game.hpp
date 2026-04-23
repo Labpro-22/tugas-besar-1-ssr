@@ -10,6 +10,8 @@
 #include "TransactionLogger.hpp"
 #include "Property.hpp"
 
+class Player;
+class Property;
 class Board;
 
 class Game {
@@ -18,12 +20,13 @@ private:
     Board *board;
     std::vector<Player *> players;
     std::vector<int> turnOrder;
-    int currentTurnIndex;
-    int currentTurn;
+    int currentPlayerIndex;
+    int turnPlayed;
     int maxTurn;
     int startingBalance;
-    std::array<Dice, 2> dices;
+    Dice dices;
     TransactionLogger *Logger;
+    bool isRunning;
 
     using GameCommand = std::function<int(const std::vector<std::string>&)>;
     std::unordered_map<std::string, GameCommand> gameCommands;
@@ -34,14 +37,19 @@ public:
 
     ~Game() = default;
     
+    Board *getBoard(){ return board; }
+    std::vector<Player*> &getPlayers(){ return players; }
+
     void startGame();
-    void runCommand(std::string &command);
+    int runCommand(std::string &command);
 
     void nextTurn();
+    bool hasWinner();
     Player* getCurrentPlayer();
+    int getLastDiceTotal(){ return dices.getTotal(); }
     bool checkWinCondition();
-    void handleBankruptcy(Player* debtor, Player* creditor, int amount);
-    void handleAuction(Property* property, Player* triggeredBy);
+    void handleBankruptcy(Player* debtor, Player* creditor, int amount) {};
+    void handleAuction(Property* property, Player* triggeredBy) {};
     void distributeSalary(Player* player);
     void removePlayer(Player* player);
     void endGame();

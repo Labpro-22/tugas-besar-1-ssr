@@ -8,6 +8,7 @@
 #include "Card.hpp"
 #include "AppException.hpp"
 
+class Property;
 
 class Tile {
 public:
@@ -20,6 +21,8 @@ public:
 	Tile(int index, const std::string& code, const std::string& name, const std::string& category);
 	virtual ~Tile() = default;
 
+	std::string &getName() { return name; }
+	
 	virtual void onLanded(Player* player, Game* game) = 0;
 	virtual void getDisplayInfo(std::stringstream& output) const = 0;
 	virtual void getTileType(std::stringstream& output) const = 0;
@@ -45,6 +48,10 @@ public:
 	void onLanded(Player* player, Game* game) override;
 	void getDisplayInfo(std::stringstream& output) const override;
 	void getTileType(std::stringstream& output) const override;
+
+	TaxType getTaxType() { return taxType; }
+	int getFlatAmount() { return flatAmount; }
+	int getPercentage() { return percentage; }
 };
 
 
@@ -132,6 +139,9 @@ public:
 	void onLanded(Player* player, Game* game) override;
 	void getDisplayInfo(std::stringstream& output) const override;
 	void getTileType(std::stringstream& output) const override;
+
+	float getMultiplier() { return multiplier; }
+	int getDuration() { return duration; }
 };
 
 
@@ -148,9 +158,6 @@ public:
 	void getDisplayInfo(std::stringstream& output) const override;
 	void getTileType(std::stringstream& output) const override;
 };
-<<<<<<< HEAD
 
 
 
-=======
->>>>>>> dev/steven

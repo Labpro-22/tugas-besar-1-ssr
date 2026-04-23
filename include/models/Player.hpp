@@ -8,6 +8,8 @@
 #include <raylib-cpp.hpp>
 using namespace std;
 
+class Board;
+class Property;
 
 enum class PlayerStatus {
     ACTIVE,
@@ -42,25 +44,36 @@ public:
     string getUsername(){ return username;}
     int getMoney(){ return money;}
     int getCardCount();
+    vector<Property*> &getAllProperties()  { return properties; }
     vector<Property*> getPropertiesByColor(raylib::Color color);
     int getOwnedRailroadCount();
     int getOwnedUtilityCount();
 
-    void moveTo(int position);
-    int moveForward(int steps, Board* board);
+    void setStatus(PlayerStatus status) { status = status; }
+    void setJailAttempts(int attempt) { jailAttempts = attempt; }
+
+    void incConsecutiveDouble();
+    void resetConsecutiveDouble();
+    bool aboveSpeedLimit();
+
+    void moveTo(Board* board, int position);
+    void moveForward(Board* board, int steps);
+
     void addProperty(Property* property);
     void removeProperty(Property* property);
+
     void addCard(SkillCard* card);
     SkillCard* removeCard(int index);
+
     void printProperties();
+
     bool isActive();
     bool isBankrupt();
     bool isJailed();
     
-    /*====Financial====*/
-    bool canAfford(int amount);
-    void addMoney(int amount);  // (salary, rent, dll.)
-    void deductMoney(int amount);   // pay money; clamps to 0 if insufficient (bankruptcy handled by caller)
+    bool canAfford(int amount) { return money >= amount; };
+    void addMoney(int amount) { money += amount; };
+    void deductMoney(int amount) { money -= amount; };
     int getTotalWealth();
     int getMaxLiquidationValue();
     virtual int chooseInput(vector<int> choices) = 0;

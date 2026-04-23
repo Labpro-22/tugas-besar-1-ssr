@@ -5,7 +5,7 @@
 
 #include "Player.hpp"
 
-
+class Player;
 
 class AppException : public std::exception {
 public:
@@ -23,8 +23,8 @@ private:
     std::string detail;
 
 public:
-    GameException(std::string className, std::string detail);
-    const char* what() const noexcept override;
+    GameException(std::string className, std::string detail) : className(className), detail(detail) {}
+    const char* what() const noexcept override { return "TODO"; }
 };
 
 
@@ -35,8 +35,8 @@ private:
     std::string detail;
 
 public:
-    PlayerActionException(Player* player, std::string detail);
-    const char* what() const noexcept override;
+    PlayerActionException(Player* player, std::string detail) : player(player), detail(detail) {}
+    const char* what() const noexcept override { return "TODO"; }
 };
 
 
@@ -46,8 +46,8 @@ private:
     std::string detail;
 
 public:
-    ResourceException(std::string detail);
-    const char* what() const noexcept override;
+    ResourceException(std::string detail) : detail(detail) {}
+    const char* what() const noexcept override { return "TODO"; }
 };
 
 
@@ -57,6 +57,6 @@ private:
     std::string detail;
 
 public:
-    GraphicsException(std::string detail);
-    const char* what() const noexcept override;
+    GraphicsException(std::string detail) : detail(detail) {}
+    const char* what() const noexcept override { return "TODO"; }
 };

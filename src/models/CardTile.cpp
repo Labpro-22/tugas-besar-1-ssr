@@ -21,7 +21,7 @@ void CardTile::onLanded(Player* player, Game* game) {
         throw GameException("CardTile", "Card cannot be null.");
     }
 
-    card->play(*player, *game);
+    card->execute(*player, *game);
 }
 
 void CardTile::getDisplayInfo(std::stringstream& output) const {

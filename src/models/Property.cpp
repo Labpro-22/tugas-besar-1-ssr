@@ -2,22 +2,24 @@
 #include <stdexcept>
 #include <iomanip>
 
-Property::Property(int ID, string code, string name, string type, int price, int mortgageValue, raylib::Color colorGroup;): 
+Property::Property(int ID, string code, string name, string type, int price, int mortgageValue, raylib::Color colorGroup): 
         ID(ID), code(code), name(name), type(type), price(price), mortgageValue(mortgageValue), 
-        ownerID(-1), status(PropertyStatus::BANK), festivalMultiplier(1), festivalDuration(0), colorGroup(color){}
+        ownerID(-1), status(PropertyStatus::BANK), festivalMultiplier(1), festivalDuration(0), colorGroup(colorGroup){}
 
 int Property::mortgage(){
     if(status != PropertyStatus::OWNED){
         throw runtime_error("Properti " + code + " tidak dapat digadaikan (status bukan OWNED).");
     }
     status = PropertyStatus::MORTGAGED;
+    return 0;
 }
 
-void Property::unmortgage(){
+int Property::unmortgage(){
     if(status != PropertyStatus::MORTGAGED){
         throw runtime_error("Properti " + code + " tidak sedang digadaikan.");
     }
     status = PropertyStatus::OWNED;
+    return 0;
 }
 
 int Property::getTotalValue() const{
