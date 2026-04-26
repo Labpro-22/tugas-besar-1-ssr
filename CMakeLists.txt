@@ -9,7 +9,7 @@ find_package(raylib REQUIRED)
 
 add_subdirectory(include/views/raylib-cpp)
 
-file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE SOURCES "src/*.cpp" "include/*.hpp")
 
 add_executable(${TARGET} ${SOURCES})
 
