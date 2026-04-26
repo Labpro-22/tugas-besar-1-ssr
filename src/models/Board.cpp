@@ -90,8 +90,7 @@ int Board::getJailIndex() {
             return tile->index;
         }
     }
-    // Fallback to index 10 if not found
-    return 10 % totalTiles;
+    return 9; // Assume default is index 10 (9 if 0-indexed)
 }
 
 int Board::getStartTileIndex() {
@@ -140,6 +139,7 @@ std::vector<int> Board::getTilesByColor(raylib::Color color) {
 
 
 void Board::initializeDefault(){
+
     auto colorBrown = raylib::Color{139, 90, 43, 255};
     auto colorLightBlue = raylib::Color{0, 191, 255, 255};
     auto colorPink = raylib::Color{255, 105, 180, 255};
@@ -197,7 +197,6 @@ void Board::printBoard() {
 
     // 1. Color Mapping & Translation Table Helpers
     auto getColorInfo = [](raylib::Color c) -> std::pair<std::string, std::string> {
-        // Match initializeDefault custom colors
         if (c.r == 139 && c.g == 90 && c.b == 43) return {"C", "COKLAT"};
         if (c.r == 0 && c.g == 191 && c.b == 255) return {"B", "BIRU_MUDA"};
         if (c.r == 255 && c.g == 105 && c.b == 180) return {"P", "PINK"};
@@ -207,8 +206,6 @@ void Board::printBoard() {
         if (c.r == 34 && c.g == 139 && c.b == 34) return {"H", "HIJAU"};
         if (c.r == 0 && c.g == 0 && c.b == 139) return {"T", "BIRU_TUA"};
         if (c.r == 130 && c.g == 130 && c.b == 130) return {"A", "ABU_ABU"};
-        
-        // Match Raylib defaults (from GameConfig)
         if (c.r == 230 && c.g == 41 && c.b == 55) return {"M", "MERAH"};
         if (c.r == 0 && c.g == 228 && c.b == 48) return {"H", "HIJAU"};
         if (c.r == 0 && c.g == 121 && c.b == 241) return {"B", "BIRU"};
@@ -346,13 +343,12 @@ void Board::printBoard() {
 
     // Top Row (20-30)
     std::vector<int> topRow = {20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
-
-    printBorder(topRow); // Extra line for symmetry
+    printBorder(topRow);
+    printBorder(topRow);
     for (int l = 0; l < 3; ++l) {
         for (int idx : topRow) std::cout << "|" << grid[idx][l];
         std::cout << "|\n";
     }
-    printBorder(topRow);
     printBorder(topRow);
 
     // Sides (19-11 left, 31-39 right)
@@ -372,10 +368,11 @@ void Board::printBoard() {
 
     // Bottom Row (10-0)
     std::vector<int> bottomRow = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
-    printBorder(bottomRow); // Already existed in manual print
+    printBorder(bottomRow);
     for (int l = 0; l < 3; ++l) {
         for (int idx : bottomRow) std::cout << "|" << grid[idx][l];
         std::cout << "|\n";
     }
+    printBorder(bottomRow);
     printBorder(bottomRow);
 }

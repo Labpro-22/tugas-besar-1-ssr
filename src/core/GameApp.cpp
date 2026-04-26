@@ -95,9 +95,9 @@ void GameApp::start() {
         }
         if(std::cin.eof()) break;
 
+        GameSession *game;
         bool loadFromSave = (in == "y" || in == "Y");
         while(true){
-            GameSession *game;
             try {
                 if(loadFromSave){
                     std::string saveDataDir;
@@ -109,41 +109,45 @@ void GameApp::start() {
                 }
                 else{
                     game = new GameSession(gameConfig);
+                    std::cout << game << '\n';
                 }
+                break;
             }
             catch(AppException &e){
                 std::cout << "Terjadi kesalahan saat melakukan loading data permainan: \n";
                 std::cout << e.what() << '\n';
                 std::cout << "Mohon ulangi prosedur...\n\n";
-                continue;
             }
 
-
-            try{
-                currentSession = game;
-                game->startGame();
-
-                std::cout << "\n\n====================================\n";
-                std::cout << "Sesi permainan telah selesai...\n";
-                std::cout <<  "====================================\n\n";
-            }
-            catch(AppException &e){
-                std::cout << "Terjadi kesalahan saat permainan berlangsung. \n";
-                std::cout << e.what() << '\n';
-                std::cout << "Permainan diberhentikan paksa...\n\n";
-            }
-
-            std::cout << "Lakukan sesi permainan baru? (Y/N)\n";
-            std::cout << ": ";
-            if(!(std::cin >> in)) break;
-
-            while(in != "Y" && in != "y" && in != "N" && in != "n"){
-                std::cout << "Masukan tidak valid, tolong masukkan (Y/N).\n";
-                std::cout << ": ";
-                if (!(std::cin >> in)) break;
-            }
-            if(in == "n" || in == "N" || std::cin.eof()) break;
         }
+
+        try{
+            currentSession = game;
+            game->startGame();
+
+            std::cout << "\n\n====================================\n";
+            std::cout << "Sesi permainan telah selesai...\n";
+            std::cout <<  "====================================\n\n";
+
+            currentSession = nullptr;
+        }
+        catch(AppException &e){
+            std::cout << "Terjadi kesalahan saat permainan berlangsung. \n";
+            std::cout << e.what() << '\n';
+            std::cout << "Permainan diberhentikan paksa...\n\n";
+        }
+
+        std::cout << "Lakukan sesi permainan baru? (Y/N)\n";
+        std::cout << ": ";
+        if(!(std::cin >> in)) break;
+
+        while(in != "Y" && in != "y" && in != "N" && in != "n"){
+            std::cout << "Masukan tidak valid, tolong masukkan (Y/N).\n";
+            std::cout << ": ";
+            if (!(std::cin >> in)) break;
+        }
+        if(in == "n" || in == "N" || std::cin.eof()) break;
     }
+
     printEndArt();
 }   

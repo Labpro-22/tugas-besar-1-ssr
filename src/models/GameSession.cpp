@@ -17,7 +17,6 @@ GameSession::GameSession(GameConfig *config) :
     startingBalance(1000), maxTurn(40), currentTurn(1),
     currentPlayerIndex(0), isRunning(true), logger(new TransactionLogger()), config(config)
 {
-
     config->board->initializeDefault();
 
     int count;
@@ -29,7 +28,7 @@ GameSession::GameSession(GameConfig *config) :
     }
 
     std::cin.ignore(1000, '\n');
-
+    
     std::cout << "Silahkan daftarkan username pemain,\n";
     for(int i = 0; i < count; ++i) {
         std::cout << "Username pemain " << i + 1 << ": ";
@@ -40,7 +39,6 @@ GameSession::GameSession(GameConfig *config) :
 
     std::random_device rd; std::mt19937 g(rd());
     std::shuffle(players.begin(), players.end(), g);
-
     for(int i = 0; i < 4; i++) deck.addCard(new MoveCard("Move" + std::to_string(i)));
 
     for(int i = 0; i < 3; i++) deck.addCard(new DiscountCard("Discount" + std::to_string(i)));
@@ -102,7 +100,7 @@ void GameSession::startGame(){
         std::string line;
         if(!std::getline(std::cin, line)) break;
         runCommand(line);
-        if(currentTurn > maxTurn || hasWinner()) endGame();
+        if(currentTurn > config->maxTurn || hasWinner()) endGame();
     }
 }
 
@@ -166,27 +164,54 @@ void GameSession::nextTurn(int die1, int die2) {
     Player *currentPlayer = getCurrentPlayer();
 
     if (currentPlayer->isJailed()) {
+        
+        if(currentPlayer->getJailAttempts() == 3){
+            currentPlayer->setStatus(PlayerStatus::ACTIVE);
+            std::cout << "Pemain " << currentPlayer->getUsername() << " telah menempuh hukuman 3 tahun penjara, silahkan keluar dari penjara!\n";
+            currentPlayer->setJailAttempts(0);
+            nextTurn(1, 0);
+            return;
+        }
+
         std::cout << currentPlayer->getUsername() << " di penjara! Silahkan ambil pilihan:\n1. Bayar M50\n2. Lempar dadu\n3. Kartu Freedom: ";
         
         int choice = currentPlayer->chooseInput({1, 2, 3});
         if(choice == 1){
-            currentPlayer->deductMoney(50);
-            currentPlayer->setStatus(PlayerStatus::ACTIVE);
+            if(currentPlayer->canAfford(50)){
+                currentPlayer->deductMoney(50);
+                currentPlayer->setStatus(PlayerStatus::ACTIVE);
+                std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil membayar denda dan sekarang bebas dari penjara!\n";
+            }
+            else{
+                std::cout << "Pemain " << currentPlayer->getUsername() << " tidak memiliki cukup uang untuk membayar denda!\n";
+                currentPlayer->incJailAttempts();
+            }
         } 
         else if(choice == 2) {
             dices.roll();
             if (dices.isDouble()) {
+                std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil mendapatkan dadu yang sama! Silahkan keluar dari penjara...\n";
                 currentPlayer->setStatus(PlayerStatus::ACTIVE);
                 nextTurn(dices.getDie1(), dices.getDie2()); 
                 return;
             } 
-            else currentPlayer->incJailAttempts();
+            else{
+                std::cout << "Pemain " << currentPlayer->getUsername() << " gagal mendapatkan dadu yang sama...\n";
+                currentPlayer->incJailAttempts();
+            }
         }
         else {
             for(Card *card : currentPlayer->getHand()){
 
                 FreedomCard *freedomCard = dynamic_cast<FreedomCard*>(card);
-                if(freedomCard) freedomCard->use(currentPlayer, GameApp::currentSession);
+                if(freedomCard){
+                    freedomCard->use(currentPlayer, GameApp::currentSession);
+                    std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil bebas dari penjara setelah menggunakan kartu!\n";
+                }
+                else{
+                    std::cout << "Pemain " << currentPlayer->getUsername() << " tidak memiliki kartu untuk bebas dari penjara!\n";
+                    currentPlayer->incJailAttempts();
+                }
             }
         }
 
@@ -206,7 +231,18 @@ void GameSession::nextTurn(int die1, int die2) {
         std::cout << "Pemain " << currentPlayer->getUsername() << " mendarat di petak " << tile->getName() << '\n';
         tile->onLanded(currentPlayer, this);
 
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        if(die1 == die2){
+            currentPlayer->incConsecutiveDouble();
+            if(currentPlayer->aboveSpeedLimit()){
+                currentPlayer->setStatus(PlayerStatus::JAILED);
+                std::cout << "Pemain " << currentPlayer->getUsername() << " melanggar batas kecepatan! Hukumannya penjara selama 3 tahun...\n";
+            }
+            else std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil mendapatkan dadu yang sama, silahkan jalankan giliran lagi.";
+        }
+        else{
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+            if(currentPlayerIndex == 0) currentTurn++;
+        }
     }
 }
 

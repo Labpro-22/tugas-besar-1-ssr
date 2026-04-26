@@ -1,4 +1,6 @@
 #include "Property.hpp"
+#include "AppException.hpp"
+
 #include <stdexcept>
 #include <iomanip>
 
@@ -37,7 +39,7 @@ bool StreetProperty::canBuild() const {
  
 void StreetProperty::build() {
     if (!canBuild()) {
-        throw runtime_error("Properti " + code + " sudah mencapai level bangunan maksimum.");
+        throw GameException("StreetProperty::build", "Properti " + code + " sudah mencapai level bangunan maksimum.");
     }
     ++buildingCount;
 }
@@ -45,7 +47,7 @@ void StreetProperty::build() {
 
 int StreetProperty::sellBuilding() {
     if (buildingCount == 0) {
-        throw std::runtime_error("Tidak ada bangunan yang dapat dijual di " + code + ".");
+        throw GameException("StreetProperty::sellBuilding", "Tidak ada bangunan yang dapat dijual di " + code + ".");
     }
     int refund;
     if (buildingCount == 5) {

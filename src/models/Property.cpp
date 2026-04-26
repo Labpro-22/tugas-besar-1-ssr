@@ -1,4 +1,6 @@
 #include "Property.hpp"
+#include "AppException.hpp"
+
 #include <stdexcept>
 #include <iomanip>
 
@@ -8,7 +10,7 @@ Property::Property(int ID, string code, string name, string type, int price, int
 
 int Property::mortgage(){
     if(status != PropertyStatus::OWNED){
-        throw runtime_error("Properti " + code + " tidak dapat digadaikan (status bukan OWNED).");
+        throw GameException("Property::mortgage", "Properti " + code + " tidak dapat digadaikan (status bukan OWNED).");
     }
     status = PropertyStatus::MORTGAGED;
     return 0;
@@ -16,7 +18,7 @@ int Property::mortgage(){
 
 int Property::unmortgage(){
     if(status != PropertyStatus::MORTGAGED){
-        throw runtime_error("Properti " + code + " tidak sedang digadaikan.");
+        throw GameException("Property::unmortgage", "Properti " + code + " tidak sedang digadaikan.");
     }
     status = PropertyStatus::OWNED;
     return 0;

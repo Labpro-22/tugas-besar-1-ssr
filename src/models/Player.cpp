@@ -41,7 +41,8 @@ void Player::moveTo(Board* board, int pos){
 
 
 void Player::moveForward(Board* board, int steps) {
-    position = (position + steps) % board->getTileCount();
+    int n = board->getTileCount();
+    position = (position + steps + n) % n;
 }
 
 

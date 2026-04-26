@@ -70,6 +70,8 @@ protected:
     void applyFestival();
     void decrementFestival();
     void resetFestival();
+    void setFestivalMultiplier(int m) { festivalMultiplier = m; }
+    void setFestivalDuration(int d) { festivalDuration = d; }
 
 };
 

@@ -1,5 +1,6 @@
 #include "Bank.hpp"
 #include "Player.hpp"
+#include "AppException.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -38,14 +39,14 @@ void Bank::logTransaction(int turn, const std::string& username,
 
 void Bank::buyStreet(Player* buyer, StreetProperty* property, int turn) {
     if (!buyer || !property) {
-        throw std::runtime_error("Bank::buyStreet — null pointer.");
+        throw GameException("Bank", "Bank::buyStreet — null pointer.");
     }
     if (property->getStatus() != PropertyStatus::BANK) {
-        throw std::runtime_error("Properti " + property->getCode() +
+        throw GameException("Bank", "Properti " + property->getCode() +
                                  " tidak tersedia untuk dibeli (status bukan BANK).");
     }
     if (!buyer->canAfford(property->getPrice())) {
-        throw std::runtime_error("Uang " + buyer->getUsername() +
+        throw GameException("Bank", "Uang " + buyer->getUsername() +
                                  " tidak cukup untuk membeli " + property->getName() +
                                  ". Harga: M" + std::to_string(property->getPrice()) +
                                  ", Uang: M" + std::to_string(buyer->getMoney()) + ".");
@@ -68,10 +69,10 @@ void Bank::buyStreet(Player* buyer, StreetProperty* property, int turn) {
 
 void Bank::claimFreeProperty(Player* claimer, Property* property, int turn) {
     if (!claimer || !property) {
-        throw std::runtime_error("Bank::claimFreeProperty — null pointer.");
+        throw GameException("Bank", "Bank::claimFreeProperty — null pointer.");
     }
     if (property->getStatus() != PropertyStatus::BANK) {
-        throw std::runtime_error("Properti " + property->getCode() +
+        throw GameException("Bank", "Properti " + property->getCode() +
                                  " sudah dimiliki pemain lain.");
     }
 
@@ -95,14 +96,14 @@ void Bank::claimFreeProperty(Player* claimer, Property* property, int turn) {
 
 int Bank::sellPropertyToBank(Player* seller, Property* property, int turn) {
     if (!seller || !property) {
-        throw std::runtime_error("Bank::sellPropertyToBank — null pointer.");
+        throw GameException("Bank", "Bank::sellPropertyToBank — null pointer.");
     }
     if (property->getOwnerID() != seller->getPlayerIndex()) {
-        throw std::runtime_error("Properti " + property->getCode() +
+        throw GameException("Bank", "Properti " + property->getCode() +
                                  " bukan milik " + seller->getUsername() + ".");
     }
     if (property->getStatus() == PropertyStatus::MORTGAGED) {
-        throw std::runtime_error("Properti " + property->getCode() +
+        throw GameException("Bank", "Properti " + property->getCode() +
                                  " sedang digadaikan dan tidak dapat dijual langsung. "
                                  "Tebus terlebih dahulu.");
     }
@@ -132,10 +133,10 @@ int Bank::sellPropertyToBank(Player* seller, Property* property, int turn) {
 
 int Bank::mortgageProperty(Player* owner, Property* property, int turn) {
     if (!owner || !property) {
-        throw std::runtime_error("Bank::mortgageProperty — null pointer.");
+        throw GameException("Bank", "Bank::mortgageProperty — null pointer.");
     }
     if (property->getOwnerID() != owner->getPlayerIndex()) {
-        throw std::runtime_error("Properti " + property->getCode() +
+        throw GameException("Bank", "Properti " + property->getCode() +
                                  " bukan milik " + owner->getUsername() + ".");
     }
     // Delegate status check to Property::mortgage() which throws on wrong status.
@@ -157,16 +158,16 @@ int Bank::mortgageProperty(Player* owner, Property* property, int turn) {
 
 int Bank::unmortgageProperty(Player* owner, Property* property, int turn) {
     if (!owner || !property) {
-        throw std::runtime_error("Bank::unmortgageProperty — null pointer.");
+        throw GameException("Bank", "Bank::unmortgageProperty — null pointer.");
     }
     if (property->getOwnerID() != owner->getPlayerIndex()) {
-        throw std::runtime_error("Properti " + property->getCode() +
+        throw GameException("Bank", "Properti " + property->getCode() +
                                  " bukan milik " + owner->getUsername() + ".");
     }
 
     int cost = property->getPrice(); // tebus = harga beli penuh (spec)
     if (!owner->canAfford(cost)) {
-        throw std::runtime_error("Uang " + owner->getUsername() +
+        throw GameException("Bank", "Uang " + owner->getUsername() +
                                  " tidak cukup untuk menebus " + property->getName() +
                                  ". Harga tebus: M" + std::to_string(cost) +
                                  " | Uang: M" + std::to_string(owner->getMoney()) + ".");
@@ -193,20 +194,20 @@ int Bank::unmortgageProperty(Player* owner, Property* property, int turn) {
 
 void Bank::buildOnProperty(Player* owner, StreetProperty* property, int turn) {
     if (!owner || !property) {
-        throw std::runtime_error("Bank::buildOnProperty — null pointer.");
+        throw GameException("Bank", "Bank::buildOnProperty — null pointer.");
     }
     if (property->getOwnerID() != owner->getPlayerIndex()) {
-        throw std::runtime_error("Properti " + property->getCode() +
+        throw GameException("Bank", "Properti " + property->getCode() +
                                  " bukan milik " + owner->getUsername() + ".");
     }
     if (!property->canBuild()) {
-        throw std::runtime_error("Properti " + property->getName() +
+        throw GameException("Bank", "Properti " + property->getName() +
                                  " sudah mencapai level bangunan maksimum.");
     }
 
     int cost = property->getBuildCost();
     if (!owner->canAfford(cost)) {
-        throw std::runtime_error("Uang " + owner->getUsername() +
+        throw GameException("Bank", "Uang " + owner->getUsername() +
                                  " tidak cukup untuk membangun di " + property->getName() +
                                  ". Biaya: M" + std::to_string(cost) +
                                  " | Uang: M" + std::to_string(owner->getMoney()) + ".");
@@ -231,7 +232,7 @@ void Bank::buildOnProperty(Player* owner, StreetProperty* property, int turn) {
 
 int Bank::sellBuilding(Player* owner, StreetProperty* property, int turn) {
     if (!owner || !property) {
-        throw std::runtime_error("Bank::sellBuilding — null pointer.");
+        throw GameException("Bank", "Bank::sellBuilding — null pointer.");
     }
 
     bool wasHotel = (property->buildingCount == 5);
@@ -252,7 +253,7 @@ int Bank::sellBuilding(Player* owner, StreetProperty* property, int turn) {
 
 int Bank::sellAllBuildings(Player* owner, StreetProperty* property, int turn) {
     if (!owner || !property) {
-        throw std::runtime_error("Bank::sellAllBuildings — null pointer.");
+        throw GameException("Bank", "Bank::sellAllBuildings — null pointer.");
     }
 
     int total = 0;
@@ -269,7 +270,7 @@ int Bank::sellAllBuildings(Player* owner, StreetProperty* property, int turn) {
 void Bank::collectRent(Player* payer, Player* owner,
                         Property* property, int rentAmount, int turn) {
     if (!payer || !owner || !property) {
-        throw std::runtime_error("Bank::collectRent — null pointer.");
+        throw GameException("Bank", "Bank::collectRent — null pointer.");
     }
     if (property->getStatus() == PropertyStatus::MORTGAGED) {
         std::cout << "Properti " << property->getName() << " (" << property->getCode()
@@ -278,7 +279,7 @@ void Bank::collectRent(Player* payer, Player* owner,
     }
     if (!payer->canAfford(rentAmount)) {
         // Let the caller handle bankruptcy; just throw to signal it.
-        throw std::runtime_error("BANKRUPT:" + payer->getUsername() +
+        throw GameException("Bank", "BANKRUPT:" + payer->getUsername() +
                                  " tidak mampu membayar sewa M" +
                                  std::to_string(rentAmount) + " kepada " +
                                  owner->getUsername() + ".");
@@ -321,10 +322,10 @@ int Bank::getUtilityMultiplier(int ownedCount) const {
 void Bank::collectFlatTax(Player* payer, int amount,
                            const std::string& taxName, int turn) {
     if (!payer) {
-        throw std::runtime_error("Bank::collectFlatTax — null pointer.");
+        throw GameException("Bank", "Bank::collectFlatTax — null pointer.");
     }
     if (!payer->canAfford(amount)) {
-        throw std::runtime_error("BANKRUPT:" + payer->getUsername() +
+        throw GameException("Bank", "BANKRUPT:" + payer->getUsername() +
                                  " tidak mampu membayar " + taxName +
                                  " M" + std::to_string(amount) + ".");
     }
@@ -345,7 +346,7 @@ void Bank::collectFlatTax(Player* payer, int amount,
 
 void Bank::paySalary(Player* recipient, int turn) {
     if (!recipient) {
-        throw std::runtime_error("Bank::paySalary — null pointer.");
+        throw GameException("Bank", "Bank::paySalary — null pointer.");
     }
 
     recipient->addMoney(goSalary);
@@ -361,10 +362,10 @@ void Bank::paySalary(Player* recipient, int turn) {
 
 void Bank::collectJailFine(Player* payer, int turn) {
     if (!payer) {
-        throw std::runtime_error("Bank::collectJailFine — null pointer.");
+        throw GameException("Bank", "Bank::collectJailFine — null pointer.");
     }
     if (!payer->canAfford(jailFine)) {
-        throw std::runtime_error("Uang " + payer->getUsername() +
+        throw GameException("Bank", "Uang " + payer->getUsername() +
                                  " tidak cukup untuk membayar denda penjara M" +
                                  std::to_string(jailFine) + ".");
     }
@@ -385,7 +386,7 @@ void Bank::collectJailFine(Player* payer, int turn) {
 
 std::vector<Property*> Bank::settleBankruptcyToBank(Player* debtor, int turn) {
     if (!debtor) {
-        throw std::runtime_error("Bank::settleBankruptcyToBank — null pointer.");
+        throw GameException("Bank", "Bank::settleBankruptcyToBank — null pointer.");
     }
 
     std::cout << "\n" << debtor->getUsername() << " dinyatakan BANGKRUT!\n";
@@ -431,7 +432,7 @@ std::vector<Property*> Bank::settleBankruptcyToBank(Player* debtor, int turn) {
 
 void Bank::settleBankruptcyToPlayer(Player* debtor, Player* creditor, int turn) {
     if (!debtor || !creditor) {
-        throw std::runtime_error("Bank::settleBankruptcyToPlayer — null pointer.");
+        throw GameException("Bank", "Bank::settleBankruptcyToPlayer — null pointer.");
     }
 
     std::cout << "\n" << debtor->getUsername() << " dinyatakan BANGKRUT!\n";

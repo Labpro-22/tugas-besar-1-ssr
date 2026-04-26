@@ -52,6 +52,8 @@ public:
     int getJailAttempts() { return jailAttempts; }
     void setJailAttempts(int attempt) { jailAttempts = attempt; }
     void incJailAttempts() { jailAttempts++; }
+    void setMoney(int m) { money = m; }
+    void setPlayerIndex(int index) { playerIndex = index; }
 
     // Operator Overloading
     Player& operator+=(int amount);

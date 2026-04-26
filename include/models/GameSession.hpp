@@ -33,6 +33,8 @@ public:
     
     void setMaxTurn(int max) { maxTurn = max; }
     void setStartingBalance(int bal) { startingBalance = bal; }
+    void setCurrentTurn(int turn) { currentTurn = turn; }
+    void setCurrentPlayerIndex(int index) { currentPlayerIndex = index; }
 
     Board *getBoard(){ return config->board; }
     GameConfig *getconfig(){ return config; }
