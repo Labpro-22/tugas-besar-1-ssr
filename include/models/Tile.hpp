@@ -2,10 +2,11 @@
 
 #include <sstream>
 #include <string>
-
-#include "Game.hpp"
 #include "Player.hpp"
-
+#include "Game.hpp"
+#include "Property.hpp"
+#include "Card.hpp"
+#include "AppException.hpp"
 
 
 class Tile {
@@ -19,7 +20,6 @@ public:
 	Tile(int index, const std::string& code, const std::string& name, const std::string& category);
 	virtual ~Tile() = default;
 
-protected:
 	virtual void onLanded(Player* player, Game* game) = 0;
 	virtual void getDisplayInfo(std::stringstream& output) const = 0;
 	virtual void getTileType(std::stringstream& output) const = 0;
@@ -50,9 +50,12 @@ public:
 
 
 class StartTile : public Tile {
+private:
+	int salary;
+
 public:
 	StartTile();
-	StartTile(int index, const std::string& code, const std::string& name, const std::string& category);
+	StartTile(int index, const std::string& code, const std::string& name, const std::string& category, int salary);
 	~StartTile() override = default;
 
 	void onPassed(Player* player, Game* game);
