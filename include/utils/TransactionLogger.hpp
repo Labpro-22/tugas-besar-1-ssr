@@ -30,4 +30,5 @@ public:
     std::string getRecentEntry(int n) const;
     void showRecentEntry(int n) const;
     int entryCount() const;
+    const std::vector<LogEntry>& getEntries() const { return entries; }
 };

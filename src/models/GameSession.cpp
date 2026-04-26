@@ -14,8 +14,8 @@
 
 
 GameSession::GameSession(GameConfig *config) : 
-    startingBalance(1000), maxTurn(40), currentTurn(1),
-    currentPlayerIndex(0), isRunning(true), logger(new TransactionLogger()), config(config)
+    startingBalance(config ? config->initialBalance : 1000), maxTurn(config ? config->maxTurn : 40), currentTurn(1),
+    currentPlayerIndex(0), isRunning(true), hasCurrentPlayerActed(false), logger(new TransactionLogger()), config(config)
 {
     config->board->initializeDefault();
 
@@ -39,29 +39,24 @@ GameSession::GameSession(GameConfig *config) :
 
     std::random_device rd; std::mt19937 g(rd());
     std::shuffle(players.begin(), players.end(), g);
-    for(int i = 0; i < 4; i++) deck.addCard(new MoveCard("Move" + std::to_string(i)));
-
-    for(int i = 0; i < 3; i++) deck.addCard(new DiscountCard("Discount" + std::to_string(i)));
-    
-    for(int i = 0; i < 2; i++) {
-        deck.addCard(new ShieldCard("Shield" + std::to_string(i)));
-        deck.addCard(new TeleportCard("Teleport" + std::to_string(i)));
-        deck.addCard(new LassoCard("Lasso" + std::to_string(i)));
-        deck.addCard(new DemolitionCard("Demolition" +std::to_string(i)));
-    }
-    
-    deck.shuffle();
+    initializeDefaultDeck();
 }
 
 
 
 GameSession::GameSession(std::string &saveDataDir, GameConfig *config) : 
-    startingBalance(1000), maxTurn(40), currentTurn(1),
-    currentPlayerIndex(0), isRunning(true), logger(new TransactionLogger()), config(config)
+    startingBalance(config ? config->initialBalance : 1000), maxTurn(config ? config->maxTurn : 40), currentTurn(1),
+    currentPlayerIndex(0), isRunning(true), hasCurrentPlayerActed(false), logger(new TransactionLogger()), config(config)
 {
     LoadHandler loader;
     loader.loadSave(saveDataDir, this);
 
+    if(deck.isEmpty()) initializeDefaultDeck();
+}
+
+
+
+void GameSession::initializeDefaultDeck() {
     for(int i = 0; i < 4; i++) deck.addCard(new MoveCard("Move" + std::to_string(i)));
 
     for(int i = 0; i < 3; i++) deck.addCard(new DiscountCard("Discount" + std::to_string(i)));
@@ -74,6 +69,16 @@ GameSession::GameSession(std::string &saveDataDir, GameConfig *config) :
     }
 
     deck.shuffle();
+}
+
+
+
+void GameSession::beginCurrentPlayerTurn() {
+    hasCurrentPlayerActed = false;
+    if (!players.empty() && currentPlayerIndex >= 0 && currentPlayerIndex < static_cast<int>(players.size())) {
+        players[currentPlayerIndex]->hasRolledDice = false;
+        players[currentPlayerIndex]->hasUsedSkill = false;
+    }
 }
 
 
@@ -87,6 +92,12 @@ GameSession::~GameSession() {
 
 
 Player* GameSession::getCurrentPlayer() {
+    if (players.empty()) {
+        throw GameException("GameSession", "Tidak ada pemain dalam sesi permainan.");
+    }
+    if (currentPlayerIndex < 0 || currentPlayerIndex >= static_cast<int>(players.size())) {
+        throw GameException("GameSession", "Indeks pemain aktif tidak valid.");
+    }
     return players[currentPlayerIndex];
 }
 
@@ -100,7 +111,7 @@ void GameSession::startGame(){
         std::string line;
         if(!std::getline(std::cin, line)) break;
         runCommand(line);
-        if(currentTurn > config->maxTurn || hasWinner()) endGame();
+        if(currentTurn > maxTurn || hasWinner()) endGame();
     }
 }
 
@@ -118,10 +129,16 @@ int GameSession::runCommand(std::string &text){
     if(command == "CETAK_PAPAN") config->board->printBoard();
     else if(command == "LEMPAR_DADU"){
         if (currentPlayer->hasRolledDice) std::cout << "Sudah melempar dadu!\n";
-        else nextTurn();
+        else {
+            hasCurrentPlayerActed = true;
+            nextTurn();
+        }
     }
     else if(command == "ATUR_DADU"){
-        if (args.size() == 2) nextTurn(std::stoi(args[0]), std::stoi(args[1]));
+        if (args.size() == 2) {
+            hasCurrentPlayerActed = true;
+            nextTurn(std::stoi(args[0]), std::stoi(args[1]));
+        }
         else std::cout << "Penggunaan: ATUR_DADU X Y\n";
     }
     else if(command == "CETAK_AKTA"){
@@ -137,10 +154,44 @@ int GameSession::runCommand(std::string &text){
         }
     }
     else if(command == "CETAK_PROPERTI") currentPlayer->printProperties();
-    else if(command == "GADAI") handleGadai(currentPlayer);
-    else if(command == "TEBUS") handleTebus(currentPlayer);
-    else if(command == "BANGUN") handleBangun(currentPlayer);
-    else if(command == "GUNAKAN_KEMAMPUAN") useSkillCard(currentPlayer);
+    else if(command == "GADAI") {
+        hasCurrentPlayerActed = true;
+        handleGadai(currentPlayer);
+    }
+    else if(command == "TEBUS") {
+        hasCurrentPlayerActed = true;
+        handleTebus(currentPlayer);
+    }
+    else if(command == "BANGUN") {
+        hasCurrentPlayerActed = true;
+        handleBangun(currentPlayer);
+    }
+    else if(command == "GUNAKAN_KEMAMPUAN") {
+        hasCurrentPlayerActed = true;
+        useSkillCard(currentPlayer);
+    }
+    else if(command == "SIMPAN") {
+        if (!canSaveAtTurnStart()) {
+            std::cout << "Simpan hanya boleh dilakukan di awal giliran sebelum aksi apa pun.\n";
+        } else {
+            std::string saveFileName;
+            if (!args.empty()) saveFileName = args[0];
+            else {
+                std::cout << "Nama file save: ";
+                std::cin >> saveFileName;
+                std::cin.ignore(1000, '\n');
+            }
+
+            try {
+                logger->log(currentTurn, currentPlayer->getUsername(), "SIMPAN", saveFileName);
+                SaveHandler saver(saveFileName);
+                saver.save(this);
+                std::cout << "Permainan berhasil disimpan ke data/" << saveFileName << "\n";
+            } catch (AppException &e) {
+                std::cout << "Gagal menyimpan permainan: " << e.what() << "\n";
+            }
+        }
+    }
     else if(command == "CETAK_LOG") {
         int limit = args.empty() ? -1 : std::stoi(args[0]);
         if (limit == -1) logger->showRecentEntry(logger->entryCount());
@@ -216,6 +267,8 @@ void GameSession::nextTurn(int die1, int die2) {
         }
 
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        if(currentPlayerIndex == 0) currentTurn++;
+        beginCurrentPlayerTurn();
     }
     else{
         dices.setManual(die1, die2);
@@ -242,6 +295,7 @@ void GameSession::nextTurn(int die1, int die2) {
         else{
             currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
             if(currentPlayerIndex == 0) currentTurn++;
+            beginCurrentPlayerTurn();
         }
     }
 }

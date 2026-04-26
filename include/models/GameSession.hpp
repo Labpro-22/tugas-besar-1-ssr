@@ -23,15 +23,18 @@ private:
     TransactionLogger *logger;
     GameConfig *config;
     bool isRunning;
+    bool hasCurrentPlayerActed;
 
     CardDeck<Card> deck;
+    void initializeDefaultDeck();
+    void beginCurrentPlayerTurn();
 
 public:
     GameSession(GameConfig *config);
     GameSession(std::string &saveDataDir, GameConfig *config);
     ~GameSession();
     
-    void setMaxTurn(int max) { maxTurn = max; }
+    void setMaxTurn(int max) { maxTurn = max; if (config) config->maxTurn = max; }
     void setStartingBalance(int bal) { startingBalance = bal; }
     void setCurrentTurn(int turn) { currentTurn = turn; }
     void setCurrentPlayerIndex(int index) { currentPlayerIndex = index; }
@@ -42,6 +45,9 @@ public:
     CardDeck<Card> &getDeck(){ return deck; }
     std::vector<Player*> &getPlayers(){ return players; }
     Player* getCurrentPlayer();
+    int getCurrentTurn() const { return currentTurn; }
+    int getMaxTurn() const { return maxTurn; }
+    bool canSaveAtTurnStart() const { return !hasCurrentPlayerActed; }
 
     void startGame();
     int runCommand(std::string &command);
