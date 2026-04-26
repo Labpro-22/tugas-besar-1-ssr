@@ -1,7 +1,7 @@
 #include "Tile.hpp"
 
 #include "AppException.hpp"
-#include "Game.hpp"
+#include "GameSession.hpp"
 #include "Player.hpp"
 
 GoToJailTile::GoToJailTile() : Tile() {}
@@ -9,7 +9,7 @@ GoToJailTile::GoToJailTile() : Tile() {}
 GoToJailTile::GoToJailTile(int index, const std::string& code, const std::string& name, const std::string& category)
     : Tile(index, code, name, category) {}
 
-void GoToJailTile::onLanded(Player* player, Game* game) {
+void GoToJailTile::onLanded(Player* player, GameSession* game) {
     if (player == nullptr) {
         throw GameException("GoToJailTile", "Player cannot be null.");
     }

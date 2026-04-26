@@ -1,5 +1,10 @@
 #include "Player.hpp"
+#include "Board.hpp"
+#include "Tile.hpp"
+#include "Property.hpp"
+#include "Card.hpp"
 #include <algorithm>
+#include <iostream>
 
 
 Player::Player(std::string username, int playerIndex, int initialMoney) :   
@@ -31,24 +36,12 @@ bool Player::aboveSpeedLimit(){ return consecutiveDoubles >= 3;}
 
 
 void Player::moveTo(Board* board, int pos){ 
-
     position = pos;
-
-    Tile *tile = board->getTile(position);
-    std::cout << "Pemain mendarat di " << tile->getName() << "...\n";
-    tile->onLanded(this, nullptr);
-
 }
 
 
 void Player::moveForward(Board* board, int steps) {
-
-    Tile *tile = board->getTile(position);
-    std::cout << "Pemain mendarat di " << tile->getName() << "...\n";
-    tile->onLanded(this, nullptr);
-
     position = (position + steps) % board->getTileCount();
-    
 }
 
 
@@ -118,11 +111,82 @@ bool Player::isActive() { return status == PlayerStatus::ACTIVE; }
 bool Player::isBankrupt() { return status == PlayerStatus::BANKRUPT; }
 bool Player::isJailed() { return status == PlayerStatus::JAILED; }
 
+Player& Player::operator+=(int amount) {
+    addMoney(amount);
+    return *this;
+}
+
+Player& Player::operator-=(int amount) {
+    deductMoney(amount);
+    return *this;
+}
+
+bool Player::operator<(Player& other) {
+    return getTotalWealth() < other.getTotalWealth();
+}
+
+bool Player::operator>(Player& other) {
+    return getTotalWealth() > other.getTotalWealth();
+}
+
+void Player::printProperties() {
+    std::cout << "--- PROPERTI MILIK " << username << " ---\n";
+    if (properties.empty()) {
+        std::cout << "(Belum memiliki properti)\n";
+        return;
+    }
+    for (auto p : properties) {
+        std::cout << "- [" << p->getCode() << "] " << p->getName() << " | Status: ";
+        switch(p->getStatus()) {
+            case PropertyStatus::OWNED: std::cout << "OWNED"; break;
+            case PropertyStatus::MORTGAGED: std::cout << "MORTGAGED"; break;
+            default: std::cout << "UNKNOWN"; break;
+        }
+        if (auto* sp = dynamic_cast<StreetProperty*>(p)) {
+            std::cout << " | Bangunan: " << sp->getBuildingCount();
+        }
+        std::cout << "\n";
+    }
+}
+
 
 HumanPlayer::HumanPlayer(std::string username, int playerIndex, int initialMoney) : Player(username, playerIndex, initialMoney) {}
 HumanPlayer::~HumanPlayer() {}
 
-int HumanPlayer::chooseInput(std::vector<int> choices) { return choices.empty() ? -1 : choices[0]; }
+int HumanPlayer::chooseInput(std::vector<int> choices) { 
+    if (choices.empty()) return -1;
+    
+    std::cout << "Pilihan yang tersedia: ";
+    for (size_t i = 0; i < choices.size(); ++i) {
+        std::cout << choices[i] << (i == choices.size() - 1 ? "" : ", ");
+    }
+    std::cout << "\nMasukkan pilihan: ";
+    
+    int choice;
+    while (true) {
+        if (!(std::cin >> choice)) {
+            std::cin.clear();
+            std::cin.ignore(1000, '\n');
+            std::cout << "Input tidak valid. Masukkan angka pilihan: ";
+            continue;
+        }
+        
+        bool found = false;
+        for (int c : choices) {
+            if (c == choice) {
+                found = true;
+                break;
+            }
+        }
+        
+        if (found) {
+            std::cin.ignore(1000, '\n');
+            return choice;
+        } else {
+            std::cout << "Pilihan tidak valid. Silakan coba lagi: ";
+        }
+    }
+}
 
 
 BotPlayer::BotPlayer(std::string username, int playerIndex, int initialMoney) : Player(username, playerIndex, initialMoney) {}

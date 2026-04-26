@@ -1,8 +1,21 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
-class Game;
+#include "GameConfig.hpp"
+
+class GameSession;
+class GameConfig;
+
+class LoadHandler {
+public:
+    LoadHandler();
+    ~LoadHandler() = default;
+
+    GameConfig *loadConfiguration(std::string &configDir);
+    void loadSave(std::string &saveDataDir, GameSession *game);
+};
 
 class SaveHandler {
 private:
@@ -10,14 +23,7 @@ private:
 
 public:
     SaveHandler(const std::string& path);
-    void save(Game* game);
-};
+    ~SaveHandler() = default;
 
-class LoadHandler {
-private:
-    std::string loadPath;
-
-public:
-    LoadHandler(const std::string& path);
-    Game* load();
+    void save(GameSession* game);
 };

@@ -3,8 +3,6 @@
 #include <exception>
 #include <string>
 
-#include "Player.hpp"
-
 class Player;
 
 class AppException : public std::exception {

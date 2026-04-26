@@ -1,5 +1,6 @@
-#include "Tile.hpp"
+#include <iostream>
 
+#include "Tile.hpp"
 #include "AppException.hpp"
 
 FreeParkingTile::FreeParkingTile() : Tile() {}
@@ -8,11 +9,12 @@ FreeParkingTile::FreeParkingTile(int index, const std::string& code, const std::
                                  const std::string& category)
     : Tile(index, code, name, category) {}
 
-void FreeParkingTile::onLanded(Player* player, Game* game) {
+void FreeParkingTile::onLanded(Player* player, GameSession *game) {
     if (player == nullptr) {
         throw GameException("FreeParkingTile", "Player cannot be null.");
     }
-    (void)game;
+
+    std::cout << "Pemain tidak melakukan apa-apa...\n";
 }
 
 void FreeParkingTile::getDisplayInfo(std::stringstream& output) const {

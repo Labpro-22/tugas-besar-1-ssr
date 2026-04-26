@@ -1,8 +1,9 @@
 #include "Tile.hpp"
 
 #include "AppException.hpp"
-#include "Game.hpp"
+#include "GameSession.hpp"
 #include "Player.hpp"
+#include <iostream>
 
 TaxTile::TaxTile()
     : Tile(), taxType(TAX_PPH), flatAmount(0), percentage(0.0F) {}
@@ -11,7 +12,7 @@ TaxTile::TaxTile(int index, const std::string& code, const std::string& name, co
                  TaxType taxType, int flatAmount, float percentage)
     : Tile(index, code, name, category), taxType(taxType), flatAmount(flatAmount), percentage(percentage) {}
 
-void TaxTile::onLanded(Player* player, Game* game) {
+void TaxTile::onLanded(Player* player, GameSession* game) {
     if (player == nullptr) {
         throw GameException("TaxTile", "Player cannot be null.");
     }
@@ -34,6 +35,9 @@ void TaxTile::onLanded(Player* player, Game* game) {
         return;
     }
 
+    std::cout << "Pilih metode pembayaran pajak:\n";
+    std::cout << "1. Bayar nominal tetap (M" << flatAmount << ")\n";
+    std::cout << "2. Bayar persentase kekayaan (" << (int)(percentage * 100) << "%)\n";
     const int choice = player->chooseInput({1, 2});
     if (choice != 1 && choice != 2) {
         throw PlayerActionException(player, "Invalid tax payment choice.");

@@ -8,7 +8,7 @@ StartTile::StartTile() : Tile(), salary(0) {}
 StartTile::StartTile(int index, const std::string& code, const std::string& name, const std::string& category, int salary)
     : Tile(index, code, name, category), salary(salary) {}
 
-void StartTile::onPassed(Player* player, Game* game) {
+void StartTile::onPassed(Player* player, GameSession* game) {
     (void)game;
     if (player == nullptr) {
         throw GameException("StartTile", "Player cannot be null.");
@@ -16,7 +16,7 @@ void StartTile::onPassed(Player* player, Game* game) {
     player->addMoney(salary);
 }
 
-void StartTile::onLanded(Player* player, Game* game) {
+void StartTile::onLanded(Player* player, GameSession* game) {
     onPassed(player, game);
 }
 

@@ -27,7 +27,8 @@ int StreetProperty::calculateRent(int diceNum, int ownedCountOfType, bool isMono
 }
 
 int StreetProperty::mortgage(){
-    return 0; // TODO
+    status = PropertyStatus::MORTGAGED;
+    return 0;
 }
  
 bool StreetProperty::canBuild() const {
@@ -54,6 +55,14 @@ int StreetProperty::sellBuilding() {
     }
     --buildingCount;
     return refund;
+}
+
+int StreetProperty::sellAllBuildings() {
+    int totalRefund = 0;
+    while (buildingCount > 0) {
+        totalRefund += sellBuilding();
+    }
+    return totalRefund;
 }
  
 // Returns cost to build the NEXT level
@@ -82,10 +91,5 @@ int StreetProperty::getSellValue() const {
 }
  
 bool StreetProperty::isMonopolized() const {
-    // This flag is set externally by the Game/Board after checking all
-    // properties in the color group. We expose a method for the tile layer
-    // to query; the actual check lives in Player::getPropertiesByColor().
-    // Here we just report whether buildingCount logic applies.
-    // Actual monopoly detection delegated to caller — see calculateRent().
     return false; // placeholder; real check is done in Game/Tile layer
 }

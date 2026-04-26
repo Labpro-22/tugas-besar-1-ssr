@@ -3,9 +3,6 @@
 #include <string>
 #include <vector>
 #include <map>
-
-#include "Tile.hpp"
-#include "AppException.hpp"
 #include <raylib-cpp.hpp>
 
 class Tile;
@@ -29,4 +26,8 @@ public:
     int getJailIndex();
     int getStartTileIndex();
     void setTile(Tile* tile, int idx);
+
+    void initializeDefault();
+
+    void printBoard();
 };

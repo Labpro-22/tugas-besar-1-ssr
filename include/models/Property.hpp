@@ -64,7 +64,7 @@ protected:
 
     /*=== Setters ===*/
     void setOwnerID(int playerID){ ownerID = playerID; }
-    void setStatus(PropertyStatus status){ status = status; }
+    void setStatus(PropertyStatus status){ this->status = status; }
 
     /*===FESTIVAL===*/
     void applyFestival();
@@ -92,7 +92,7 @@ public:
     int getBuildCost() const;
     bool canBuild() const;
     void build();
-    int sellAllBuildings() { return 0; };
+    int sellAllBuildings();
 
     int getBuildingCount()const {return buildingCount;}
     int getTotalValue() const override;
@@ -104,6 +104,7 @@ public:
 
 class RailroadProperty : public Property {
 public:
+    static std::vector<int> rentTable;
     RailroadProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color);
     RailroadProperty(int ID, string code, string name, int price, int mortgageValue);
     ~RailroadProperty();
@@ -115,6 +116,7 @@ public:
 
 class UtilityProperty : public Property {
 public:
+    static std::vector<int> multiplierTable;
     UtilityProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color);
     UtilityProperty(int ID, string code, string name, int price, int mortgageValue);
     ~UtilityProperty();

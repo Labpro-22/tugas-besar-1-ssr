@@ -1,7 +1,7 @@
 #include "Tile.hpp"
 
 #include "AppException.hpp"
-#include "Game.hpp"
+#include "GameSession.hpp"
 #include "Player.hpp"
 #include "Property.hpp"
 
@@ -13,7 +13,7 @@ PropertyTile::PropertyTile(int index, const std::string& code, const std::string
                            Property* property)
     : Tile(index, code, name, category), property(property) {}
 
-void PropertyTile::onLanded(Player* player, Game* game) {
+void PropertyTile::onLanded(Player* player, GameSession* game) {
     if (player == nullptr) {
         throw GameException("PropertyTile", "Player cannot be null.");
     }
@@ -31,6 +31,9 @@ void PropertyTile::onLanded(Player* player, Game* game) {
             return;
         }
 
+        std::cout << "Pilih aksi untuk petak properti:\n";
+        std::cout << "1. Beli properti (M" << property->getPrice() << ")\n";
+        std::cout << "2. Lelang properti\n";
         const int choice = player->chooseInput({1, 2});
         if (choice != 1 && choice != 2) {
             throw PlayerActionException(player, "Invalid property landing choice.");

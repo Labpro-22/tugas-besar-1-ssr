@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <iomanip>
 
+std::vector<int> UtilityProperty::multiplierTable = {0, 4, 10};
+
 UtilityProperty::UtilityProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color)
     : Property(ID, code, name, "UTILITY", price, mortgageValue, color) {}
  
@@ -11,5 +13,6 @@ UtilityProperty::UtilityProperty(int ID, string code, string name, int price, in
 UtilityProperty::~UtilityProperty() {}
  
 int UtilityProperty::calculateRent(int diceNum, int ownedCountOfType, bool isMono) {
-    return diceNum * ownedCountOfType *festivalMultiplier;
+    int count = min((int)ownedCountOfType, (int)multiplierTable.size() - 1);
+    return diceNum * multiplierTable[count] * festivalMultiplier;
 }

@@ -1,4 +1,5 @@
 #include "AppException.hpp"
+#include "Player.hpp"
 
 GameException::GameException(const std::string& gameComponent, const std::string& detail){
     message = "[GAME ERROR] " + gameComponent + ": " + detail;

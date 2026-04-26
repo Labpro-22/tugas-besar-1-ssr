@@ -2,14 +2,11 @@
 
 #include <string>
 #include <vector>
-#include "Board.hpp"
-#include "Property.hpp"
-#include "Card.hpp"
 #include <raylib-cpp.hpp>
-using namespace std;
 
 class Board;
 class Property;
+class SkillCard;
 
 enum class PlayerStatus {
     ACTIVE,
@@ -17,40 +14,50 @@ enum class PlayerStatus {
     JAILED
 };
 
-
-
-class Player{
+class Player {
 protected:
-    string username;
+    std::string username;
     int money;
     int position;
     PlayerStatus status;
-    vector<Property*> properties;
-    vector<SkillCard*> hand;
+    std::vector<Property*> properties;
+    std::vector<SkillCard*> hand;
     int playerIndex;
     bool isShieldActive;
     int discount;
     int jailAttempts;
-    bool hasRolledDice;
-    bool hasUsedSkill;
     int consecutiveDoubles;
 
 public:
-    Player(string username, int playerIndex, int initialMoney);
+    bool hasRolledDice;
+    bool hasUsedSkill;
+
+    Player(std::string username, int playerIndex, int initialMoney);
     virtual ~Player();
 
     // GETTER
     int getPlayerIndex(){ return playerIndex;}
-    string getUsername(){ return username;}
+    std::string getUsername(){ return username;}
     int getMoney(){ return money;}
+    int getPosition(){ return position;}
+    PlayerStatus getStatus(){ return status;}
     int getCardCount();
-    vector<Property*> &getAllProperties()  { return properties; }
-    vector<Property*> getPropertiesByColor(raylib::Color color);
+    std::vector<Property*> &getAllProperties()  { return properties; }
+    std::vector<Property*> getPropertiesByColor(raylib::Color color);
     int getOwnedRailroadCount();
     int getOwnedUtilityCount();
 
-    void setStatus(PlayerStatus status) { status = status; }
+    void setStatus(PlayerStatus status) { this->status = status; }
+    void setPosition(int pos) { position = pos; }
+    int getJailAttempts() { return jailAttempts; }
     void setJailAttempts(int attempt) { jailAttempts = attempt; }
+    void incJailAttempts() { jailAttempts++; }
+
+    // Operator Overloading
+    Player& operator+=(int amount);
+    Player& operator-=(int amount);
+    bool operator<(Player& other);
+    bool operator>(Player& other);
 
     void incConsecutiveDouble();
     void resetConsecutiveDouble();
@@ -64,6 +71,7 @@ public:
 
     void addCard(SkillCard* card);
     SkillCard* removeCard(int index);
+    std::vector<SkillCard*>& getHand() { return hand; }
 
     void printProperties();
 
@@ -76,25 +84,21 @@ public:
     void deductMoney(int amount) { money -= amount; };
     int getTotalWealth();
     int getMaxLiquidationValue();
-    virtual int chooseInput(vector<int> choices) = 0;
+    virtual int chooseInput(std::vector<int> choices) = 0;
 };
-
-
 
 class HumanPlayer : public Player {
 public:
-    HumanPlayer(string username, int playerIndex, int initialMoney);
+    HumanPlayer(std::string username, int playerIndex, int initialMoney);
     ~HumanPlayer();
 
-    int chooseInput(vector<int> choices) override;
+    int chooseInput(std::vector<int> choices) override;
 };
-
-
 
 class BotPlayer : public Player {
 public:
-    BotPlayer(string username, int playerIndex, int initialMoney);
+    BotPlayer(std::string username, int playerIndex, int initialMoney);
     ~BotPlayer();
     
-    int chooseInput(vector<int> choices) override;
+    int chooseInput(std::vector<int> choices) override;
 };

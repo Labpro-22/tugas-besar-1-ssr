@@ -12,7 +12,7 @@ FestivalTile::FestivalTile(int index, const std::string& code, const std::string
                            float multiplier, int duration)
     : Tile(index, code, name, category), multiplier(multiplier), duration(duration) {}
 
-void FestivalTile::onLanded(Player* player, Game* game) {
+void FestivalTile::onLanded(Player* player, GameSession* game) {
     if (player == nullptr) {
         throw GameException("FestivalTile", "Player cannot be null.");
     }
@@ -40,7 +40,10 @@ void FestivalTile::onLanded(Player* player, Game* game) {
     for (int i = 0; i < static_cast<int>(eligibleProperties.size()); ++i) {
         choices.push_back(i + 1);
     }
-
+    std::cout << "Pilih properti untuk festival (multiplier x" << multiplier << " selama " << duration << " giliran):\n";
+    for (int i = 0; i < static_cast<int>(eligibleProperties.size()); ++i) {
+        std::cout << i + 1 << ". " << eligibleProperties[i]->getName() << "\n";
+    }
     const int choice = player->chooseInput(choices);
     if (choice < 1 || choice > static_cast<int>(eligibleProperties.size())) {
         throw PlayerActionException(player, "Invalid festival property choice.");

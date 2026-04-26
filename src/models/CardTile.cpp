@@ -2,7 +2,8 @@
 
 #include "AppException.hpp"
 #include "Card.hpp"
-#include "Game.hpp"
+#include "GameSession.hpp"
+#include <iostream>
 
 CardTile::CardTile() : Tile(), card(nullptr) {}
 
@@ -10,18 +11,16 @@ CardTile::CardTile(int index, const std::string& code, const std::string& name, 
                    Card* card)
     : Tile(index, code, name, category), card(card) {}
 
-void CardTile::onLanded(Player* player, Game* game) {
+void CardTile::onLanded(Player* player, GameSession* game) {
     if (player == nullptr) {
         throw GameException("CardTile", "Player cannot be null.");
     }
     if (game == nullptr) {
         throw GameException("CardTile", "Game cannot be null.");
     }
-    if (card == nullptr) {
-        throw GameException("CardTile", "Card cannot be null.");
-    }
-
-    card->execute(*player, *game);
+    
+    std::cout << "Kamu mendarat di Petak " << name << "!\n";
+    game->drawCard(player);
 }
 
 void CardTile::getDisplayInfo(std::stringstream& output) const {

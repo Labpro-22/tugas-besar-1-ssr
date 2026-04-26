@@ -7,7 +7,7 @@ JailTile::JailTile() : Tile() {}
 JailTile::JailTile(int index, const std::string& code, const std::string& name, const std::string& category)
     : Tile(index, code, name, category) {}
 
-void JailTile::onLanded(Player* player, Game* game) {
+void JailTile::onLanded(Player* player, GameSession* game) {
     if (player == nullptr) {
         throw GameException("JailTile", "Player cannot be null.");
     }

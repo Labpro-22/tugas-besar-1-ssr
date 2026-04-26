@@ -1,10 +1,14 @@
 #include "Board.hpp"
-
 #include "Property.hpp"
+#include "Tile.hpp"
+#include "AppException.hpp"
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 Board::Board(int totalTiles)
-    : tiles(totalTiles > 0 ? (totalTiles) : 0),
-      totalTiles(totalTiles) {}
+    : tiles(totalTiles > 0 ? (totalTiles) : 0), totalTiles(totalTiles) { tiles.assign(totalTiles, nullptr); }
 
 Board::~Board() {
     for (Tile* tile : tiles) {
@@ -75,11 +79,12 @@ int Board::findNearestStation(int fromIndex) {
 
 int Board::getJailIndex() {
     for(Tile* tile: tiles){
-        if (dynamic_cast<const JailTile*>(tile) != nullptr){
+        if (tile && dynamic_cast<const JailTile*>(tile) != nullptr){
             return tile->index;
         }
     }
-    throw GameException("Board", "Jail tile's index not found");
+    // Fallback to index 10 if not found
+    return 10 % totalTiles;
 }
 
 int Board::getStartTileIndex() {
@@ -112,16 +117,51 @@ void Board::setTile(Tile* tile, int idx) {
 std::vector<int> Board::getTilesByColor(raylib::Color color) {
     std::vector<int> result;
     for (Tile* tile : tiles) {
+        if (!tile) continue;
         auto* propertyTile = dynamic_cast<PropertyTile*>(tile);
         if (propertyTile == nullptr || propertyTile->property == nullptr) {
             continue;
         }
 
         auto* street = dynamic_cast<StreetProperty*>(propertyTile->property);
-        if (street != nullptr && street->getColorGroup() == color) {
+        if (street != nullptr && street->getColorGroup().r == color.r && street->getColorGroup().g == color.g && street->getColorGroup().b == color.b) {
             result.push_back(tile->index);
         }
     }
     return result;
 }
 
+
+void Board::initializeDefault(){
+    for (int i = 0; i < totalTiles; ++i) {
+        setTile(new FreeParkingTile(i, "PARK", "Bebas Parkir", "SPESIAL"), i); // Placeholder
+    }
+    setTile(new StartTile(0, "GO", "Petak Mulai", "SPESIAL", 200), 0);
+}
+
+void Board::printBoard(){
+    std::cout << "--- PAPAN PERMAINAN NIMONSPOLI ---\n";
+    for (int i = 0; i < totalTiles; ++i) {
+        if (!tiles[i]) continue;
+        
+        std::cout << std::setw(2) << i+1 << ". [" << tiles[i]->code << "] " << std::left << std::setw(20) << tiles[i]->name;
+        
+        auto* propTile = dynamic_cast<PropertyTile*>(tiles[i]);
+        if (propTile && propTile->property) {
+            Property* p = propTile->property;
+            std::cout << " | Status: ";
+            switch(p->getStatus()) {
+                case PropertyStatus::BANK: std::cout << "BANK"; break;
+                case PropertyStatus::OWNED: std::cout << "OWNER: " << p->getOwnerID(); break;
+                case PropertyStatus::MORTGAGED: std::cout << "MORTGAGED"; break;
+            }
+            if (auto* sp = dynamic_cast<StreetProperty*>(p)) {
+                if (sp->getBuildingCount() > 0) {
+                    if (sp->getBuildingCount() == 5) std::cout << " (HOTEL)";
+                    else std::cout << " (" << sp->getBuildingCount() << " RUMAH)";
+                }
+            }
+        }
+        std::cout << "\n";
+    }
+}
