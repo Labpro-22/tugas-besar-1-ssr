@@ -133,7 +133,7 @@ Beberapa aksi dijalankan otomatis oleh sistem saat kondisi tertentu terjadi:
 | `KESEMPATAN / DANA UMUM` | Pemain mendarat di petak kartu. |
 | `DROP KARTU KEMAMPUAN` | Jumlah kartu kemampuan pemain melebihi batas maksimum. |
 
-## Struktur Project
+## Struktur Proyek
 
 | Path | Isi |
 | --- | --- |
@@ -163,7 +163,7 @@ Arsitektur project dibagi menjadi beberapa layer:
 - Exception handling digunakan untuk menangani input tidak valid, aksi tidak valid, resource file bermasalah, dan kondisi permainan khusus.
 - Operator overloading digunakan pada operasi uang dan perbandingan kekayaan pemain.
 
-## Contoh Demo Flow
+## Contoh Alur Kerja Program
 
 Build dan jalankan program:
 
