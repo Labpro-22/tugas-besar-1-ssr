@@ -29,16 +29,17 @@ protected:
     int festivalMultiplier;
     int festivalDuration;
     
-    virtual int calculateRent(int diceNum, int ownedCountOfType, bool isMono) = 0;
     
-    public:
+public:
     Property(int ID, string code, string name, string type, int price, int mortgageValue, raylib::Color color, int festivalMultiplier, int festivalDuration);
     Property(int ID, string code, string name, string type, int price, int mortgageValue, raylib::Color color);
     Property(int ID, string code, string name, string type, int price, int mortgageValue);
 
     virtual ~Property() = default;
-    
+        
+    virtual int calculateRent(int diceNum, int ownedCountOfType, bool isMono) = 0;
     virtual int mortgage();
+    
     int unmortgage();
     
     virtual int getTotalValue() const;
@@ -56,9 +57,6 @@ protected:
     PropertyStatus getStatus() const { return status; }
     int getFestivalMultiplier() const { return festivalMultiplier;  }
     int getFestivalDuration() const { return festivalDuration; }
-    int getRent(int diceNum, int ownedCountOfType) {
-        return calculateRent(diceNum, ownedCountOfType, false);
-    }
     raylib::Color getColorGroup() { return colorGroup; }
 
 
@@ -67,7 +65,7 @@ protected:
     void setStatus(PropertyStatus status){ this->status = status; }
 
     /*===FESTIVAL===*/
-    void applyFestival();
+    void applyFestival(int multiplier, int duration);
     void decrementFestival();
     void resetFestival();
     void setFestivalMultiplier(int m) { festivalMultiplier = m; }
@@ -82,7 +80,7 @@ public:
     int housePrice;
     int hotelPrice;
     vector<int> rentLevels;
-    int buildingCount; // 0-4 : rumah, 5 : hotel
+    int buildingCount;
     
     StreetProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color, int housePrice, int hotelPrice, vector<int> rentLevels);
     ~StreetProperty();
@@ -106,7 +104,6 @@ public:
 
 class RailroadProperty : public Property {
 public:
-    static std::vector<int> rentTable;
     RailroadProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color);
     RailroadProperty(int ID, string code, string name, int price, int mortgageValue);
     ~RailroadProperty();
@@ -118,7 +115,6 @@ public:
 
 class UtilityProperty : public Property {
 public:
-    static std::vector<int> multiplierTable;
     UtilityProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color);
     UtilityProperty(int ID, string code, string name, int price, int mortgageValue);
     ~UtilityProperty();

@@ -1,9 +1,13 @@
 #include "Tile.hpp"
 
+#include "GameApp.hpp"
 #include "AppException.hpp"
 #include "GameSession.hpp"
 #include "Player.hpp"
+#include "GameApp.hpp"
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 TaxTile::TaxTile()
     : Tile(), taxType(TAX_PPH), flatAmount(0), percentage(0.0F) {}
@@ -12,7 +16,7 @@ TaxTile::TaxTile(int index, const std::string& code, const std::string& name, co
                  TaxType taxType, int flatAmount, float percentage)
     : Tile(index, code, name, category), taxType(taxType), flatAmount(flatAmount), percentage(percentage) {}
 
-void TaxTile::onLanded(Player* player, GameSession* game) {
+void TaxTile::onLanded(Player* player) {
     if (player == nullptr) {
         throw GameException("TaxTile", "Player cannot be null.");
     }
@@ -21,6 +25,17 @@ void TaxTile::onLanded(Player* player, GameSession* game) {
     }
     if (percentage < 0.0F) {
         throw GameException("TaxTile", "Tax percentage cannot be negative.");
+    }
+
+
+    GameSession *game = GameApp::currentSession;
+
+    game->getBoard()->printBoard();
+    std::cout << "Pemain " << player->getUsername() << " mendarat di petak " << this->getName() << '\n';
+
+    if (player->getShield()) {
+        std::cout << "Pemain " << player->getUsername() << " terlindungi oleh ShieldCard! Bebas biaya pajak.\n";
+        return;
     }
 
     if (taxType == TAX_PBM) {
@@ -66,6 +81,18 @@ void TaxTile::onLanded(Player* player, GameSession* game) {
         return;
     }
     player->deductMoney(taxAmount);
+}
+
+
+void TaxTile::onPassed(Player* player) {
+    if (player == nullptr) {
+        throw GameException("TaxTile", "Player cannot be null.");
+    }
+    
+    GameSession *game = GameApp::currentSession;
+    game->getBoard()->printBoard();
+    std::cout << "Pemain " << player->getUsername() << " melewati petak " << this->getName() << '\n';
+    std::this_thread::sleep_for(std::chrono::milliseconds(750));
 }
 
 void TaxTile::getDisplayInfo(std::stringstream& output) const {

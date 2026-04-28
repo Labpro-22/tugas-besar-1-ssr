@@ -13,7 +13,7 @@ CardDeck<T>::~CardDeck() {
 }
 
 template <typename T>
-T *CardDeck<T>::draw() {
+T *CardDeck<T>::draw(bool removeCard) {
     if(activePile.empty() && discardedPile.empty()){
         throw GameException("CardDeck", "Deck is empty");
     }
@@ -25,7 +25,7 @@ T *CardDeck<T>::draw() {
     }
 
     T *card = activePile.back();
-    activePile.pop_back();
+    if(removeCard) activePile.pop_back();
     return card;
 }
 

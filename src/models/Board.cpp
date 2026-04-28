@@ -152,7 +152,7 @@ void Board::initializeDefault(){
 
     setTile(new StartTile(0, "GO", "Petak Mulai", "SPESIAL", 200), 0);
     setTile(new PropertyTile(1, "GRT", "Garut", "PROPERTY", new StreetProperty(1, "GRT", "GARUT", 60, 40, colorBrown, 20, 50, {2, 10, 30, 90, 160, 250})), 1);
-    setTile(new CardTile(2, "DNU", "Dana Umum", "KARTU", nullptr), 2);
+    setTile(new CardTile(2, "DNU", "Dana Umum", "KARTU", CardTile::ActionType::FUND), 2);
     setTile(new PropertyTile(3, "TSK", "Tasikmalaya", "PROPERTY", new StreetProperty(3, "TSK", "TASIKMALAYA", 60, 40, colorBrown, 50, 50, {4, 20, 60, 180, 320, 450})), 3);
     setTile(new TaxTile(4, "PPH", "Pajak Penghasilan", "PAJAK", TaxTile::TAX_PPH, 150, 10.0), 4);
     setTile(new PropertyTile(5, "GBR", "Stasiun Gambir", "PROPERTY", new RailroadProperty(5, "GBR", "STASIUN_GAMBIR", 200, 100)), 5);
@@ -167,12 +167,12 @@ void Board::initializeDefault(){
     setTile(new PropertyTile(14, "YOG", "Yogyakarta", "PROPERTY", new StreetProperty(14, "YOG", "YOGYAKARTA", 160, 120, colorPink, 100, 100, {12, 60, 180, 500, 700, 900})), 14);
     setTile(new PropertyTile(15, "STB", "Stasiun Bandung", "PROPERTY", new RailroadProperty(15, "STB", "STASIUN_BANDUNG", 200, 100)), 15);
     setTile(new PropertyTile(16, "MAL", "Malang", "PROPERTY", new StreetProperty(16, "MAL", "MALANG", 180, 135, colorOrange, 100, 100, {14, 70, 200, 550, 750, 950})), 16);
-    setTile(new CardTile(17, "DNU", "Dana Umum", "KARTU", nullptr), 17);
+    setTile(new CardTile(17, "DNU", "Dana Umum", "KARTU", CardTile::ActionType::FUND), 17);
     setTile(new PropertyTile(18, "SMG", "Semarang", "PROPERTY", new StreetProperty(18, "SMG", "SEMARANG", 180, 140, colorOrange, 100, 100, {14, 70, 200, 550, 750, 950})), 18);
     setTile(new PropertyTile(19, "SBY", "Surabaya", "PROPERTY", new StreetProperty(19, "SBY", "SURABAYA", 200, 150, colorOrange, 100, 100, {16, 80, 220, 600, 800, 1000})), 19);
     setTile(new FreeParkingTile(20, "BBP", "Bebas Parkir", "SPESIAL"), 20);
     setTile(new PropertyTile(21, "MKS", "Makassar", "PROPERTY", new StreetProperty(21, "MKS", "MAKASSAR", 220, 175, colorRed, 150, 150, {18, 90, 250, 700, 875, 1050})), 21);
-    setTile(new CardTile(22, "KSP", "Kesempatan", "KARTU", nullptr), 22);
+    setTile(new CardTile(22, "KSP", "Kesempatan", "KARTU", CardTile::ActionType::OPPOTURNITY), 22);
     setTile(new PropertyTile(23, "BLP", "Balikpapan", "PROPERTY", new StreetProperty(23, "BLP", "BALIKPAPAN", 220, 175, colorRed, 150, 150, {18, 90, 250, 700, 875, 1050})), 23);
     setTile(new PropertyTile(24, "MND", "Manado", "PROPERTY", new StreetProperty(24, "MND", "MANADO", 240, 190, colorRed, 150, 150, {20, 100, 300, 750, 925, 1100})), 24);
     setTile(new PropertyTile(25, "TUG", "Stasiun Tugu", "PROPERTY", new RailroadProperty(25, "TUG", "STASIUN_TUGU", 200, 100)), 25);
@@ -186,7 +186,7 @@ void Board::initializeDefault(){
     setTile(new FestivalTile(33, "FES", "Festival", "FESTIVAL", 0.0, 0), 33);
     setTile(new PropertyTile(34, "MTR", "Mataram", "PROPERTY", new StreetProperty(34, "MTR", "MATARAM", 320, 280, colorGreen, 200, 200, {28, 150, 450, 1000, 1200, 1400})), 34);
     setTile(new PropertyTile(35, "GUB", "Stasiun Gubeng", "PROPERTY", new RailroadProperty(35, "GUB", "STASIUN_GUBENG", 200, 100)), 35);
-    setTile(new CardTile(36, "KSP", "Kesempatan", "KARTU", nullptr), 36);
+    setTile(new CardTile(36, "KSP", "Kesempatan", "KARTU", CardTile::ActionType::OPPOTURNITY), 36);
     setTile(new PropertyTile(37, "JKT", "Jakarta", "PROPERTY", new StreetProperty(37, "JKT", "JAKARTA", 350, 300, colorDarkBlue, 200, 200, {35, 175, 500, 1100, 1300, 1500})), 37);
     setTile(new TaxTile(38, "PBM", "Pajak Barang Mewah", "PAJAK", TaxTile::TAX_PBM, 200, 0.0), 38);
     setTile(new PropertyTile(39, "IKN", "Ibu Kota Nusantara", "PROPERTY", new StreetProperty(39, "IKN", "IBU_KOTA_NUSANTARA", 400, 350, colorDarkBlue, 200, 200, {50, 200, 600, 1400, 1700, 2000})), 39);

@@ -1,3 +1,4 @@
+#include "GameApp.hpp"
 #include "Property.hpp"
 #include "AppException.hpp"
 
@@ -92,6 +93,20 @@ int StreetProperty::getSellValue() const {
     return price + buildRefund;
 }
  
+
 bool StreetProperty::isMonopolized() const {
-    return false; // placeholder; real check is done in Game/Tile layer
+    GameSession *game = GameApp::currentSession;
+    Player *owner = nullptr;
+
+    for(Player *p : game->getPlayers()){
+        if(p->getPlayerIndex() == ownerID){
+            owner = p;
+            break;
+        }
+    }
+    if(owner == nullptr) throw GameException("isMonopolized", "Property owne could not be resolved");
+
+    const std::vector<Property*> ownedSameColor = owner->getPropertiesByColor(colorGroup);
+    const std::vector<int> boardSameColor = game->getBoard()->getTilesByColor(colorGroup);
+    return !boardSameColor.empty() && ownedSameColor.size() == boardSameColor.size();
 }

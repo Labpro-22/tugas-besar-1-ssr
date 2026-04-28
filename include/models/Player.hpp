@@ -24,7 +24,7 @@ protected:
     std::vector<SkillCard*> hand;
     int playerIndex;
     bool isShieldActive;
-    int discount;
+    float discount;
     int jailAttempts;
     int consecutiveDoubles;
 
@@ -54,6 +54,11 @@ public:
     void incJailAttempts() { jailAttempts++; }
     void setMoney(int m) { money = m; }
     void setPlayerIndex(int index) { playerIndex = index; }
+
+    bool getShield() { return isShieldActive; }
+    void setShield(bool active) { isShieldActive = active; }
+    float getDiscount() { return discount; }
+    void setDiscount(float d) { discount = d; }
 
     // Operator Overloading
     Player& operator+=(int amount);

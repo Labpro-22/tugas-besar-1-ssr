@@ -25,8 +25,14 @@ private:
     bool isRunning;
     bool hasCurrentPlayerActed;
 
-    CardDeck<Card> deck;
-    void initializeDefaultDeck();
+    CardDeck<ActionCard> fundDeck;
+    CardDeck<ActionCard> oppoturnityDeck;
+    CardDeck<SkillCard> skillDeck;
+    
+    void initializeDefaultOppoturnity();
+    void initializeDefaultFund();
+    void initializeDefaultSkill();
+    
     void beginCurrentPlayerTurn();
 
 public:
@@ -40,9 +46,11 @@ public:
     void setCurrentPlayerIndex(int index) { currentPlayerIndex = index; }
 
     Board *getBoard(){ return config->board; }
-    GameConfig *getconfig(){ return config; }
+    GameConfig *getConfig(){ return config; }
     TransactionLogger *getLogger(){ return logger; }
-    CardDeck<Card> &getDeck(){ return deck; }
+    CardDeck<ActionCard> &getFundDeck(){ return fundDeck; }
+    CardDeck<ActionCard> &getOppoturnityDeck(){ return oppoturnityDeck; }
+    CardDeck<SkillCard> &getSkillDeck(){ return skillDeck; }
     std::vector<Player*> &getPlayers(){ return players; }
     Player* getCurrentPlayer();
     int getCurrentTurn() const { return currentTurn; }
@@ -59,6 +67,8 @@ public:
     int getLastDiceTotal(){ return dices.getTotal(); }
     bool checkWinCondition();
 
+    void handleJail(Player *currentPlayer);
+    
     void handleBankruptcy(Player* debtor, Player* creditor, int amount);
     void handleAuction(Property* property, Player* triggeredBy);
     
@@ -66,8 +76,18 @@ public:
     void handleTebus(Player* player);
     void handleBangun(Player* player);
 
+    void updateFestivalState();
     void useSkillCard(Player* player);
-    void drawCard(Player* player);
+    void assignSkillCard();
+
+    void addFundCard(ActionCard *card){ fundDeck.addCard(card); }
+    void addOppoturnityCard(ActionCard *card){ oppoturnityDeck.addCard(card); }
+    void addSkillCard(SkillCard *card){ skillDeck.addCard(card); }
+
+    ActionCard* drawFundCard(bool removeCard) { return fundDeck.draw(removeCard); }
+    ActionCard* drawOppoturnityCard(bool removeCard) { return oppoturnityDeck.draw(removeCard); }
+    SkillCard* drawSkillCard(bool removeCard) { return skillDeck.draw(removeCard); }
+
     void distributeSalary(Player* player);
     void removePlayer(Player* player);
     void endGame();

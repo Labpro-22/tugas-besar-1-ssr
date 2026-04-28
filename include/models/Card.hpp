@@ -17,7 +17,7 @@ public:
 
     Card(std::string id, std::string type);
     virtual ~Card() = default;
-    virtual void execute(Player *player, GameSession *game) = 0;
+    virtual void execute(Player *player) = 0;
 };
 
 
@@ -27,7 +27,7 @@ public:
     std::string actionName;
 
     ActionCard(std::string id, std::string type, std::string name);
-    void execute(Player *player, GameSession *game) override = 0;
+    void execute(Player *player) override = 0;
 };
 
 
@@ -35,7 +35,7 @@ public:
 class GoToStationCard : public ActionCard {
 public:
     GoToStationCard(std::string id);
-    void execute(Player *player, GameSession *game) override;
+    void execute(Player *player) override;
 };
 
 
@@ -45,7 +45,7 @@ public:
     int step;
 
     MoveBackCard(std::string id, int step);
-    void execute(Player *player, GameSession *game) override;
+    void execute(Player *player) override;
 };
 
 
@@ -53,7 +53,7 @@ public:
 class GoToJailCard : public ActionCard {
 public:
     GoToJailCard(std::string id);
-    void execute(Player *player, GameSession *game) override;
+    void execute(Player *player) override;
 };
 
 
@@ -63,7 +63,7 @@ public:
     int amount;
 
     GratificationCard(std::string id, int amount);
-    void execute(Player *player, GameSession *game) override;
+    void execute(Player *player) override;
 };
 
 
@@ -73,7 +73,7 @@ public:
     int amount;
 
     BirthdayGiftCard(std::string id, int amount);
-    void execute(Player *player, GameSession *game) override;
+    void execute(Player *player) override;
 };
 
 
@@ -83,7 +83,7 @@ public:
     int amount;
 
     DoctorFeeCard(std::string id, int amount);
-    void execute(Player *player, GameSession *game) override;
+    void execute(Player *player) override;
 };
 
 
@@ -93,8 +93,8 @@ public:
     std::string skillName;
 
     SkillCard(std::string id, std::string name);
-    void execute(Player *player, GameSession *game);
-    virtual void use(Player *player, GameSession *game) = 0;
+    void execute(Player *player);
+    virtual void use(Player *player) = 0;
 };
 
 
@@ -104,7 +104,7 @@ public:
     int distance;
 
     MoveCard(std::string id);
-    void use(Player *player, GameSession *game) override;
+    void use(Player *player) override;
 };
 
 
@@ -114,8 +114,8 @@ public:
     float discount;
     int duration;
 
-    DiscountCard(std::string id);
-    void use(Player *player, GameSession *game) override;
+    DiscountCard(std::string id, int duration);
+    void use(Player *player) override;
 };
 
 
@@ -124,8 +124,8 @@ class ShieldCard : public SkillCard {
 public:
     int duration;
 
-    ShieldCard(std::string id);
-    void use(Player *player, GameSession *game) override;
+    ShieldCard(std::string id, int duration);
+    void use(Player *player) override;
 };
 
 
@@ -133,7 +133,7 @@ public:
 class TeleportCard : public SkillCard {
 public:
     TeleportCard(std::string id);
-    void use(Player *player, GameSession *game) override;
+    void use(Player *player) override;
 };
 
 
@@ -141,7 +141,7 @@ public:
 class LassoCard : public SkillCard {
 public:
     LassoCard(std::string id);
-    void use(Player *player, GameSession *game) override;
+    void use(Player *player) override;
 };
 
 
@@ -149,7 +149,7 @@ public:
 class DemolitionCard : public SkillCard {
 public:
     DemolitionCard(std::string id);
-    void use(Player *player, GameSession *game) override;
+    void use(Player *player) override;
 };
 
 
@@ -157,7 +157,7 @@ public:
 class FreedomCard : public SkillCard {
 public:
     FreedomCard(std::string id);
-    void use(Player *player, GameSession *game) override;
+    void use(Player *player) override;
 };
 
 
@@ -172,7 +172,7 @@ public:
     CardDeck() = default;
     ~CardDeck();
 
-    T* draw();
+    T* draw(bool removeCard);
     void discard(T* card);
     void shuffle();
     int size() const;

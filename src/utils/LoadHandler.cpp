@@ -54,6 +54,7 @@ GameConfig *LoadHandler::loadConfiguration(std::string &configDir) {
     }
 
 
+
     std::string line;
 
     while(std::getline(actionFile, line)){
@@ -84,8 +85,12 @@ GameConfig *LoadHandler::loadConfiguration(std::string &configDir) {
             else if(kode == "PBM") config->board->setTile(new TaxTile(id, kode, nama, jenis, TaxTile::TAX_PBM, config->pbmFlat, 0), id);
             else throw ResourceException("Invalid line '" + line + "' at file " + configPath + "aksi.txt");
         }
-        else if(jenis == "FESTIVAL") config->board->setTile(new FestivalTile(id, kode, nama, jenis, 0, 0), id);
-        else if(jenis == "KARTU") config->board->setTile(new CardTile(id, kode, nama, jenis, nullptr), id);
+        else if(jenis == "FESTIVAL") config->board->setTile(new FestivalTile(id, kode, nama, jenis, 2, 3), id);
+        else if(jenis == "KARTU"){
+            if(kode == "DNU") config->board->setTile(new CardTile(id, kode, nama, jenis, CardTile::ActionType::FUND), id);
+            else if(kode == "KSP") config->board->setTile(new CardTile(id, kode, nama, jenis, CardTile::ActionType::OPPOTURNITY), id);
+            else throw ResourceException("Invalid line '" + line + "' at file " + configPath + "aksi.txt");
+        }
         else throw ResourceException("Invalid line '" + line + "' at file " + configPath + "aksi.txt");
     }
 
@@ -145,9 +150,27 @@ GameConfig *LoadHandler::loadConfiguration(std::string &configDir) {
         config->board->setTile(new PropertyTile(id, kode, nama, "PROPERTY", property), id);
     }
 
+    int count, rent, mult;
+    while(std::getline(railroadFile, line)){
+        if(line.empty()) continue;
+        std::istringstream iss(line);
+        
+        if(!(iss >> count >> rent)) throw ResourceException("Invalid line '" + line + "' at file " + configPath + "railroad.txt");
+        config->railroadRentTable[count] = rent;
+    }
+
+
+    while(std::getline(utilityFile, line)){
+        if(line.empty()) continue;
+        std::istringstream iss(line);
+        
+        if(!(iss >> count >> mult)) throw ResourceException("Invalid line '" + line + "' at file " + configPath + "utility.txt");
+        config->utilityMultiplierTable[count] = rent;
+    }
 
     return config;
 }
+
 
 void LoadHandler::loadSave(std::string &saveDir, GameSession* game) {
     std::string filePath = "data/" + saveDir;
@@ -194,7 +217,7 @@ void LoadHandler::loadSave(std::string &saveDir, GameSession* game) {
         p->setStatus(status);
         try {
             p->setPosition(game->getBoard()->getTileByCode(posCode)->index);
-        } catch (...) {
+        } catch (AppException &) {
             throw ResourceException("Invalid tile code " + posCode + " for player " + username);
         }
 
@@ -219,25 +242,32 @@ void LoadHandler::loadSave(std::string &saveDir, GameSession* game) {
                 MoveCard* mc = new MoveCard("Move_" + username + "_" + std::to_string(j));
                 if (iss >> dist) mc->distance = dist;
                 card = mc;
-            } else if (cardType == "DiscountCard") {
+            } 
+            else if (cardType == "DiscountCard") {
                 float disc; int dur;
-                DiscountCard* dc = new DiscountCard("Disc_" + username + "_" + std::to_string(j));
+                DiscountCard* dc = new DiscountCard("Disc_" + username + "_" + std::to_string(j), 1);
                 if (iss >> disc >> dur) { dc->discount = disc; dc->duration = dur; }
                 card = dc;
-            } else if (cardType == "ShieldCard") {
+            } 
+            else if (cardType == "ShieldCard") {
                 int dur;
-                ShieldCard* sc = new ShieldCard("Shield_" + username + "_" + std::to_string(j));
+                ShieldCard* sc = new ShieldCard("Shield_" + username + "_" + std::to_string(j), 1);
                 if (iss >> dur) sc->duration = dur;
                 card = sc;
-            } else if (cardType == "TeleportCard") {
+            } 
+            else if (cardType == "TeleportCard") {
                 card = new TeleportCard("Tele_" + username + "_" + std::to_string(j));
-            } else if (cardType == "LassoCard") {
+            } 
+            else if (cardType == "LassoCard") {
                 card = new LassoCard("Lasso_" + username + "_" + std::to_string(j));
-            } else if (cardType == "DemolitionCard") {
+            } 
+            else if (cardType == "DemolitionCard") {
                 card = new DemolitionCard("Demo_" + username + "_" + std::to_string(j));
-            } else if (cardType == "FreedomCard") {
+            } 
+            else if (cardType == "FreedomCard") {
                 card = new FreedomCard("Free_" + username + "_" + std::to_string(j));
-            } else {
+            } 
+            else {
                 throw ResourceException("Unknown card type: " + cardType);
             }
             if (card) p->addCard(card);
@@ -319,23 +349,31 @@ void LoadHandler::loadSave(std::string &saveDir, GameSession* game) {
         if (!(saveFile >> cardType)) throw ResourceException("Missing deck card type");
         
         Card* card = nullptr;
+        bool isFundCard = false;
         // Check both Action and Skill types for deck
         if (cardType == "MoveCard") card = new MoveCard("Deck_" + std::to_string(i));
-        else if (cardType == "DiscountCard") card = new DiscountCard("Deck_" + std::to_string(i));
-        else if (cardType == "ShieldCard") card = new ShieldCard("Deck_" + std::to_string(i));
+        else if (cardType == "DiscountCard") card = new DiscountCard("Deck_" + std::to_string(i), 1);
+        else if (cardType == "ShieldCard") card = new ShieldCard("Deck_" + std::to_string(i), 1);
         else if (cardType == "TeleportCard") card = new TeleportCard("Deck_" + std::to_string(i));
         else if (cardType == "LassoCard") card = new LassoCard("Deck_" + std::to_string(i));
         else if (cardType == "DemolitionCard") card = new DemolitionCard("Deck_" + std::to_string(i));
         else if (cardType == "FreedomCard") card = new FreedomCard("Deck_" + std::to_string(i));
         else if (cardType == "GoToStationCard") card = new GoToStationCard("Deck_" + std::to_string(i));
-        else if (cardType == "MoveBackCard") card = new MoveBackCard("Deck_" + std::to_string(i), 3); // Default 3
+        else if (cardType == "MoveBackCard") card = new MoveBackCard("Deck_" + std::to_string(i), 3);
         else if (cardType == "GoToJailCard") card = new GoToJailCard("Deck_" + std::to_string(i));
-        else if (cardType == "GratificationCard") card = new GratificationCard("Deck_" + std::to_string(i), 100);
-        else if (cardType == "BirthdayGiftCard") card = new BirthdayGiftCard("Deck_" + std::to_string(i), 50);
-        else if (cardType == "DoctorFeeCard") card = new DoctorFeeCard("Deck_" + std::to_string(i), 50);
+        else if (cardType == "GratificationCard") { card = new GratificationCard("Deck_" + std::to_string(i), 100); isFundCard = true;}
+        else if (cardType == "BirthdayGiftCard") { card = new BirthdayGiftCard("Deck_" + std::to_string(i), 50); isFundCard = true; }
+        else if (cardType == "DoctorFeeCard") { card = new DoctorFeeCard("Deck_" + std::to_string(i), 50); isFundCard = true; }
         else throw ResourceException("Unknown deck card type: " + cardType);
 
-        if (card) game->getDeck().addCard(card);
+        if (auto sc = dynamic_cast<SkillCard*>(card)){
+            game->addSkillCard(sc);
+        }
+        else if(auto sc = dynamic_cast<ActionCard*>(card)){
+            if(isFundCard) game->addFundCard(sc);
+            else game->addOppoturnityCard(sc);
+        }
+        else throw ResourceException("Invalid card type (not a skill card or action card)");
     }
 
     // 8. STATE_LOG

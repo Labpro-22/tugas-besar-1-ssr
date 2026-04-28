@@ -38,7 +38,7 @@ JKT street BANK BANK 1 0 0
 IKN street BANK BANK 1 0 0
 3
 TeleportCard
-DiscountCard 50 2
+DiscountCard
 ShieldCard
 2
 1 Alice DADU Lempar: 3+3=6 mendarat di Bogor (BGR)

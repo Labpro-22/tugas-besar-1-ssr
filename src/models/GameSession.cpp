@@ -11,6 +11,8 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <chrono>
+#include <thread>
 
 
 GameSession::GameSession(GameConfig *config) : 
@@ -33,13 +35,18 @@ GameSession::GameSession(GameConfig *config) :
     for(int i = 0; i < count; ++i) {
         std::cout << "Username pemain " << i + 1 << ": ";
         std::string name; 
+
         std::getline(std::cin, name);
         players.push_back(new HumanPlayer(name, i, startingBalance));
     }
+    std::cout << "\n[PRESS ENTER TO START]\n";
 
     std::random_device rd; std::mt19937 g(rd());
     std::shuffle(players.begin(), players.end(), g);
-    initializeDefaultDeck();
+
+    initializeDefaultOppoturnity();
+    initializeDefaultFund();
+    initializeDefaultSkill();
 }
 
 
@@ -51,25 +58,45 @@ GameSession::GameSession(std::string &saveDataDir, GameConfig *config) :
     LoadHandler loader;
     loader.loadSave(saveDataDir, this);
 
-    if(deck.isEmpty()) initializeDefaultDeck();
+    if(fundDeck.isEmpty()) initializeDefaultFund();
+    if(oppoturnityDeck.isEmpty()) initializeDefaultOppoturnity();
+    if(skillDeck.isEmpty()) initializeDefaultSkill();
 }
 
 
 
-void GameSession::initializeDefaultDeck() {
-    for(int i = 0; i < 4; i++) deck.addCard(new MoveCard("Move" + std::to_string(i)));
+void GameSession::initializeDefaultSkill() {
+    for(int i = 0; i < 4; i++) skillDeck.addCard(new MoveCard("Move" + std::to_string(i)));
 
-    for(int i = 0; i < 3; i++) deck.addCard(new DiscountCard("Discount" + std::to_string(i)));
+    for(int i = 0; i < 3; i++) skillDeck.addCard(new DiscountCard("Discount" + std::to_string(i), 1));
     
     for(int i = 0; i < 2; i++) {
-        deck.addCard(new ShieldCard("Shield" + std::to_string(i)));
-        deck.addCard(new TeleportCard("Teleport" + std::to_string(i)));
-        deck.addCard(new LassoCard("Lasso" + std::to_string(i)));
-        deck.addCard(new DemolitionCard("Demolition" +std::to_string(i)));
+        skillDeck.addCard(new ShieldCard("Shield" + std::to_string(i), 1));
+        skillDeck.addCard(new TeleportCard("Teleport" + std::to_string(i)));
+        skillDeck.addCard(new LassoCard("Lasso" + std::to_string(i)));
+        skillDeck.addCard(new DemolitionCard("Demolition" +std::to_string(i)));
     }
-
-    deck.shuffle();
+    skillDeck.shuffle();
 }
+
+
+void GameSession::initializeDefaultFund() {
+    fundDeck.addCard(new GratificationCard("GRATIFICATION", 200));
+    fundDeck.addCard(new BirthdayGiftCard("BIRTHDAY", 100));
+    fundDeck.addCard(new DoctorFeeCard("DOCTOR", 700));
+
+    fundDeck.shuffle();
+}
+
+
+void GameSession::initializeDefaultOppoturnity() {
+    oppoturnityDeck.addCard(new GoToStationCard("GO_STATION"));
+    oppoturnityDeck.addCard(new MoveBackCard("MOVE_BACk", 3));
+    oppoturnityDeck.addCard(new GoToJailCard("GO_JAIL"));
+
+    oppoturnityDeck.shuffle();
+}
+   
 
 
 
@@ -104,13 +131,26 @@ Player* GameSession::getCurrentPlayer() {
 
 
 void GameSession::startGame(){
+
+    std::cin.ignore(1000, '\n');
     std::cout << "Selamat datang di Nimonspoli!\n";
+
+    config->board->printBoard();
+    assignSkillCard();
+
     while(isRunning){
         Player* currentPlayer = getCurrentPlayer();
+
         std::cout << "\n[Turn " << currentTurn << "] Giliran " << currentPlayer->getUsername() << " (M" << currentPlayer->getMoney() << ")\n> ";
+        if(currentPlayer->isJailed()){
+            handleJail(currentPlayer);
+            continue;
+        }
+
         std::string line;
         if(!std::getline(std::cin, line)) break;
         runCommand(line);
+
         if(currentTurn > maxTurn || hasWinner()) endGame();
     }
 }
@@ -118,13 +158,17 @@ void GameSession::startGame(){
 
 
 int GameSession::runCommand(std::string &text){
+    
+    Player* currentPlayer = getCurrentPlayer();
+
     std::istringstream iss(text);
     std::vector<std::string> args;
     std::string command, arg;
+
     iss >> command;
     while(iss >> arg) args.push_back(arg);
+
     if (command.empty()) return 0;
-    Player* currentPlayer = getCurrentPlayer();
 
     if(command == "CETAK_PAPAN") config->board->printBoard();
     else if(command == "LEMPAR_DADU"){
@@ -150,7 +194,7 @@ int GameSession::runCommand(std::string &text){
                 if (pt && pt->property) {
                     std::stringstream ss; pt->property->printCertificate(ss); std::cout << ss.str();
                 } else std::cout << "Petak bukan properti.\n";
-            } catch (...) { std::cout << "Kode tidak ditemukan.\n"; }
+            } catch (AppException &) { std::cout << "Kode tidak ditemukan.\n"; }
         }
     }
     else if(command == "CETAK_PROPERTI") currentPlayer->printProperties();
@@ -167,8 +211,14 @@ int GameSession::runCommand(std::string &text){
         handleBangun(currentPlayer);
     }
     else if(command == "GUNAKAN_KEMAMPUAN") {
-        hasCurrentPlayerActed = true;
-        useSkillCard(currentPlayer);
+        if(currentPlayer->hasUsedSkill){
+            std::cout << "Pemain " << currentPlayer->getUsername() << " sudah menggunakan kartu spesial, silahkan tunggu giliran selanjutnya!\n";
+        }
+        else{
+            useSkillCard(currentPlayer);
+            hasCurrentPlayerActed = true;
+            currentPlayer->hasUsedSkill = true;
+        }
     }
     else if(command == "SIMPAN") {
         if (!canSaveAtTurnStart()) {
@@ -212,107 +262,66 @@ void GameSession::nextTurn() {
 
 void GameSession::nextTurn(int die1, int die2) {
 
-    Player *currentPlayer = getCurrentPlayer();
+    if(die1 < 1 || die1 > 6 || die2 < 1 || die2 > 6){
+        std::cout << "Nilai dadu tidak valid! (" << die1 << ", " << die2 << "), tolong masukkan bilangan dalam rentang 1-6!\n";
+        return;
+    }
 
-    if (currentPlayer->isJailed()) {
-        
-        if(currentPlayer->getJailAttempts() == 3){
-            currentPlayer->setStatus(PlayerStatus::ACTIVE);
-            std::cout << "Pemain " << currentPlayer->getUsername() << " telah menempuh hukuman 3 tahun penjara, silahkan keluar dari penjara!\n";
-            currentPlayer->setJailAttempts(0);
-            nextTurn(1, 0);
+    Player *currentPlayer = getCurrentPlayer();
+    dices.setManual(die1, die2);
+
+    int total = die1 + die2;
+    std::cout << "Nilai dadu: " << die1 << " + " << die2 << " = " << total << '\n';
+    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+    
+    if(die1 == die2){
+        currentPlayer->incConsecutiveDouble();
+        if(currentPlayer->aboveSpeedLimit()){
+            currentPlayer->setStatus(PlayerStatus::JAILED);
+            currentPlayer->setPosition(config->board->getJailIndex());
+            std::cout << "Pemain " << currentPlayer->getUsername() << " melanggar batas kecepatan! Hukumannya penjara selama 3 tahun...\n";
+            logger->log(currentTurn, currentPlayer->getUsername(), "Lempar", "Melanggar batas kecepatan, masuk ke penjara");
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
             return;
         }
+    }
+    int currPos = currentPlayer->getPosition();
+    while(total > 1){
+        currPos = (currPos + 1) % 40;
+        currentPlayer->setPosition(currPos);
+        Tile *tile = config->board->getTile(currPos);
+        tile->onPassed(currentPlayer);
+        total--;
+    }
 
-        std::cout << currentPlayer->getUsername() << " di penjara! Silahkan ambil pilihan:\n1. Bayar M50\n2. Lempar dadu\n3. Kartu Freedom: ";
-        
-        int choice = currentPlayer->chooseInput({1, 2, 3});
-        if(choice == 1){
-            if(currentPlayer->canAfford(50)){
-                currentPlayer->deductMoney(50);
-                currentPlayer->setStatus(PlayerStatus::ACTIVE);
-                std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil membayar denda dan sekarang bebas dari penjara!\n";
-            }
-            else{
-                std::cout << "Pemain " << currentPlayer->getUsername() << " tidak memiliki cukup uang untuk membayar denda!\n";
-                currentPlayer->incJailAttempts();
-            }
-        } 
-        else if(choice == 2) {
-            dices.roll();
-            if (dices.isDouble()) {
-                std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil mendapatkan dadu yang sama! Silahkan keluar dari penjara...\n";
-                currentPlayer->setStatus(PlayerStatus::ACTIVE);
-                nextTurn(dices.getDie1(), dices.getDie2()); 
-                return;
-            } 
-            else{
-                std::cout << "Pemain " << currentPlayer->getUsername() << " gagal mendapatkan dadu yang sama...\n";
-                currentPlayer->incJailAttempts();
-            }
-        }
-        else {
-            for(Card *card : currentPlayer->getHand()){
-
-                FreedomCard *freedomCard = dynamic_cast<FreedomCard*>(card);
-                if(freedomCard){
-                    freedomCard->use(currentPlayer, GameApp::currentSession);
-                    std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil bebas dari penjara setelah menggunakan kartu!\n";
-                }
-                else{
-                    std::cout << "Pemain " << currentPlayer->getUsername() << " tidak memiliki kartu untuk bebas dari penjara!\n";
-                    currentPlayer->incJailAttempts();
-                }
-            }
-        }
-
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-        if(currentPlayerIndex == 0) currentTurn++;
-        beginCurrentPlayerTurn();
+    currPos = (currPos + 1) % 40;
+    currentPlayer->setPosition(currPos);
+    Tile *tile = config->board->getTile(currPos);
+    tile->onLanded(currentPlayer);
+    
+    if(die1 == die2){        
+        std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil mendapatkan dadu yang sama, silahkan jalankan giliran lagi.";
     }
     else{
-        dices.setManual(die1, die2);
-
-        int total = die1 + die2;
-        int oldPos = currentPlayer->getPosition();
-        int newPos = config->board->getNextTileIndex(oldPos, total);
-        if (newPos < oldPos) distributeSalary(currentPlayer);
-        
-        currentPlayer->setPosition(newPos);
-
-        Tile *tile = config->board->getTile(newPos);
-        std::cout << "Pemain " << currentPlayer->getUsername() << " mendarat di petak " << tile->getName() << '\n';
-        tile->onLanded(currentPlayer, this);
-
-        if(die1 == die2){
-            currentPlayer->incConsecutiveDouble();
-            if(currentPlayer->aboveSpeedLimit()){
-                currentPlayer->setStatus(PlayerStatus::JAILED);
-                std::cout << "Pemain " << currentPlayer->getUsername() << " melanggar batas kecepatan! Hukumannya penjara selama 3 tahun...\n";
-            }
-            else std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil mendapatkan dadu yang sama, silahkan jalankan giliran lagi.";
+        currentPlayer->resetConsecutiveDouble();
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        if(currentPlayerIndex == 0){
+            currentTurn++;
+            assignSkillCard();
+            updateFestivalState();
         }
-        else{
-            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-            if(currentPlayerIndex == 0) currentTurn++;
-            beginCurrentPlayerTurn();
-        }
+        beginCurrentPlayerTurn();
     }
-}
 
-
-
-void GameSession::distributeSalary(Player* player) {
-    player->addMoney(config->goSalary);
-    logger->log(currentTurn, player->getUsername(), "GAJI", "Melewati GO, dapat M200");
+    logger->log(currentTurn, currentPlayer->getUsername(), "Lempar", std::to_string(die1) + "+" + std::to_string(die2) + "=" + std::to_string(total) + " mendarat di " + tile->getName());
 }
 
 
 
 bool GameSession::hasWinner() {
-    int active = 0;
-    for(auto p : players) if(p->isActive()) active++;
-    return active <= 1;
+    int bankrupt = 0;
+    for(auto p : players) if(p->isBankrupt()) bankrupt++;
+    return (bankrupt == players.size() - 1);
 }
 
 
@@ -324,6 +333,62 @@ void GameSession::endGame() {
     for(auto p : players) if(p->isActive()) winner = p;
 
     if (winner) std::cout << "Pemenang: " << winner->getUsername() << "\n\n";
+}
+
+
+void GameSession::handleJail(Player *currentPlayer){
+
+    std::cout << currentPlayer->getUsername() << " di penjara! Silahkan ambil pilihan:\n1. Bayar M" << config->jailFine << "\n2. Lempar dadu\n3. Kartu Freedom\n";
+    
+    int choice = currentPlayer->chooseInput({1, 2, 3});
+    if(choice == 1){
+        if(currentPlayer->canAfford(config->jailFine)){
+            currentPlayer->deductMoney(config->jailFine);
+            currentPlayer->setStatus(PlayerStatus::ACTIVE);
+            std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil membayar denda dan sekarang bebas dari penjara!\n";
+        }
+        else{
+            std::cout << "Pemain " << currentPlayer->getUsername() << " tidak memiliki cukup uang untuk membayar denda!\n";
+            currentPlayer->incJailAttempts();
+        }
+    } 
+    else if(choice == 2) {
+        dices.roll();
+        if (dices.isDouble()) {
+            std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil mendapatkan dadu yang sama! Silahkan keluar dari penjara...\n";
+            currentPlayer->setStatus(PlayerStatus::ACTIVE);
+            nextTurn(dices.getDie1(), dices.getDie2()); 
+            return;
+        } 
+        else{
+            std::cout << "Pemain " << currentPlayer->getUsername() << " gagal mendapatkan dadu yang sama...\n";
+            currentPlayer->incJailAttempts();
+        }
+    }
+    else {
+        for(Card *card : currentPlayer->getHand()){
+
+            FreedomCard *freedomCard = dynamic_cast<FreedomCard*>(card);
+            if(freedomCard){
+                freedomCard->use(currentPlayer);
+                std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil bebas dari penjara setelah menggunakan kartu!\n";
+            }
+            else{
+                std::cout << "Pemain " << currentPlayer->getUsername() << " tidak memiliki kartu untuk bebas dari penjara!\n";
+                currentPlayer->incJailAttempts();
+            }
+        }
+    }
+
+    if(currentPlayer->getJailAttempts() == 3){
+        currentPlayer->setStatus(PlayerStatus::ACTIVE);
+        std::cout << "Pemain " << currentPlayer->getUsername() << " telah menempuh hukuman 3 tahun penjara, silahkan keluar dari penjara!\n";
+        currentPlayer->setJailAttempts(0);
+    }
+
+    currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+    if(currentPlayerIndex == 0) currentTurn++;
+    beginCurrentPlayerTurn();
 }
 
 
@@ -376,7 +441,8 @@ void GameSession::handleTebus(Player* player) {
 
 
 void GameSession::handleBangun(Player* player) {
-    std::vector<StreetProperty*> eligible; std::vector<int> choices;
+    std::vector<StreetProperty*> eligible; 
+    std::vector<int> choices;
     for (size_t i = 0; i < player->getAllProperties().size(); ++i) {
         if (auto* sp = dynamic_cast<StreetProperty*>(player->getAllProperties()[i])) {
             if (sp->canBuild()) { eligible.push_back(sp); choices.push_back(i + 1); std::cout << i + 1 << ". " << sp->getName() << "\n"; }
@@ -385,8 +451,15 @@ void GameSession::handleBangun(Player* player) {
     if (choices.empty()) { std::cout << "Tidak ada properti untuk dibangun.\n"; return; }
     int choice = player->chooseInput(choices);
     StreetProperty* sp = eligible[choice-1];
-    if (player->canAfford(sp->getBuildCost())) {
-        player->deductMoney(sp->getBuildCost());
+    
+    int cost = sp->getBuildCost();
+    if (player->getDiscount() > 0) {
+        cost = static_cast<int>(cost * (1.0f - player->getDiscount() / 100.0f));
+        std::cout << "Mendapatkan diskon " << player->getDiscount() << "%! Biaya bangun menjadi M" << cost << ".\n";
+    }
+
+    if (player->canAfford(cost)) {
+        player->deductMoney(cost);
         sp->build();
         logger->log(currentTurn, player->getUsername(), "BANGUN", sp->getCode());
     } else std::cout << "Uang tidak cukup.\n";
@@ -402,20 +475,39 @@ void GameSession::handleBankruptcy(Player* debtor, Player* creditor, int amount)
 
 
 
+
+void GameSession::updateFestivalState() {
+
+    for(Player* player : players){
+        for(Property *prop : player->getAllProperties()){
+            prop->decrementFestival();
+        }
+    }
+}
+
 void GameSession::useSkillCard(Player* player) {
     auto& hand = player->getHand();
     if (hand.empty()) { std::cout << "Tidak ada kartu.\n"; return; }
     std::vector<int> choices;
     for (size_t i = 0; i < hand.size(); ++i) { choices.push_back(i + 1); std::cout << i+1 << ". " << hand[i]->skillName << "\n"; }
     int choice = player->chooseInput(choices);
-    hand[choice-1]->use(player, this);
+    hand[choice-1]->use(player);
+    skillDeck.addCard(hand[choice-1]);
     player->removeCard(choice-1);
 }
 
 
 
-void GameSession::drawCard(Player* player) {
-    Card* c = deck.draw();
-    if (auto* sc = dynamic_cast<SkillCard*>(c)) player->addCard(sc);
-    else c->execute(player, this);
+void GameSession::assignSkillCard() {
+    for (Player* p : players) {
+        if (p->isActive() && p->getCardCount() < 3) {
+            try {
+                SkillCard* card = skillDeck.draw(true);
+                std::cout << "Pemain " << p->getUsername() << " mendapatkan kartu spesial: " << card->skillName << '\n'; 
+                p->addCard(card);
+            } catch (const AppException& e) {
+                std::cout << "Gagal membagikan kartu: " << e.what() << "\n";
+            }
+        }
+    }
 }

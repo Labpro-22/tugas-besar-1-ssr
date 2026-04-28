@@ -1,5 +1,6 @@
 #include "Auction.hpp"
 #include "Player.hpp"
+#include "AppException.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -95,7 +96,7 @@ int Auction::requestAction(Player* player) const {
                     continue;
                 }
                 return amount;
-            } catch (...) {
+            } catch (AppException &) {
                 std::cout << "Format tidak valid. Gunakan: BID <angka> atau PASS\n";
             }
             continue;
@@ -320,7 +321,7 @@ int Auction::requestForcedBid(Player* player) const {
                     continue;
                 }
                 return amount;
-            } catch (...) {
+            } catch (AppException &) {
                 std::cout << "Format tidak valid. Gunakan: BID <angka>\n";
             }
         } else if (line == "PASS" || line == "pass") {

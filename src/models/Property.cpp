@@ -28,16 +28,20 @@ int Property::getTotalValue() const{
     return price;
 }
 int Property::getSellValue() const{
-    return price; //base price
+    return price;
 }
 
-void Property::applyFestival() {
-    if (festivalMultiplier < 8) {
-        festivalMultiplier *= 2;
-    }else{
-        cout << "Efek sudah maksimum (harga sewa sudah digandakan tiga kali)\n";
+void Property::applyFestival(int multiplier, int duration) {
+    int maxMultiplier = 1;
+    for(int i = 0; i < duration; i++) maxMultiplier *= multiplier;
+
+    if (festivalMultiplier < maxMultiplier) {
+        festivalMultiplier *= multiplier;
     }
-    festivalDuration = 3;
+    else{
+        cout << "Efek sudah maksimum (harga sewa sudah digandakan sebanyak " << duration << " kali)\n";
+    }
+    festivalDuration = duration;
 }
  
 void Property::decrementFestival() {

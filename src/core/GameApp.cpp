@@ -57,8 +57,7 @@ void GameApp::start() {
     GameConfig *gameConfig;
 
     std::cout << "=========================================\n";
-    std::cout << "Selamat datang di " << gameTitle << "!\n";
-    std::cout << gameDescription << "\n\n";
+    std::cout << gameTitle << " telah dimulai!\n";
     std::cout << "=========================================\n";
 
     while(true){
@@ -109,7 +108,6 @@ void GameApp::start() {
                 }
                 else{
                     game = new GameSession(gameConfig);
-                    std::cout << game << '\n';
                 }
                 break;
             }

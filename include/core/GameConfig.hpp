@@ -12,6 +12,7 @@ public:
     int goSalary, jailFine;
 
     Board *board;
+    std::map<int, int> railroadRentTable, utilityMultiplierTable;
     std::unordered_map<std::string, raylib::Color> colorMap;
 
 

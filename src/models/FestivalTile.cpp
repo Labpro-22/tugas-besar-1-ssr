@@ -1,28 +1,33 @@
 #include "Tile.hpp"
 
+#include "GameApp.hpp"
 #include "AppException.hpp"
 #include "Player.hpp"
 #include "Property.hpp"
 
 #include <vector>
+#include <chrono>
+#include <thread>
 
-FestivalTile::FestivalTile() : Tile(), multiplier(1.0F), duration(0) {}
+FestivalTile::FestivalTile() : Tile(), multiplier(1), duration(0) {}
 
-FestivalTile::FestivalTile(int index, const std::string& code, const std::string& name, const std::string& category,
-                           float multiplier, int duration)
+FestivalTile::FestivalTile(int index, const std::string& code, const std::string& name, const std::string& category, int multiplier, int duraiton)
     : Tile(index, code, name, category), multiplier(multiplier), duration(duration) {}
 
-void FestivalTile::onLanded(Player* player, GameSession* game) {
+void FestivalTile::onLanded(Player* player) {
     if (player == nullptr) {
         throw GameException("FestivalTile", "Player cannot be null.");
     }
-    (void)game;
     if (multiplier < 0.0F) {
         throw GameException("FestivalTile", "Festival multiplier cannot be negative.");
     }
     if (duration < 0) {
         throw GameException("FestivalTile", "Festival duration cannot be negative.");
     }
+
+    GameSession *game = GameApp::currentSession;
+    game->getBoard()->printBoard();
+    std::cout << "Pemain " << player->getUsername() << " mendarat di petak " << this->getName() << '\n';
 
     std::vector<StreetProperty*> eligibleProperties;
     for (Property* ownedProperty : player->getAllProperties()) {
@@ -49,7 +54,19 @@ void FestivalTile::onLanded(Player* player, GameSession* game) {
         throw PlayerActionException(player, "Invalid festival property choice.");
     }
 
-    eligibleProperties[choice - 1]->applyFestival();
+    eligibleProperties[choice - 1]->applyFestival(multiplier, duration);
+}
+
+
+void FestivalTile::onPassed(Player* player) {
+    if (player == nullptr) {
+        throw GameException("FestivalTile", "Player cannot be null.");
+    }
+    
+    GameSession *game = GameApp::currentSession;
+    game->getBoard()->printBoard();
+    std::cout << "Pemain " << player->getUsername() << " melewati petak " << this->getName() << '\n';
+    std::this_thread::sleep_for(std::chrono::milliseconds(750));
 }
 
 void FestivalTile::getDisplayInfo(std::stringstream& output) const {

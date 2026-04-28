@@ -1,11 +1,15 @@
 #include "Tile.hpp"
 
+#include "GameApp.hpp"
 #include "AppException.hpp"
 #include "GameSession.hpp"
+#include "GameApp.hpp"
 #include "Player.hpp"
 #include "Property.hpp"
 
 #include <vector>
+#include <chrono>
+#include <thread>
 
 PropertyTile::PropertyTile() : Tile(), property(nullptr) {}
 
@@ -13,23 +17,33 @@ PropertyTile::PropertyTile(int index, const std::string& code, const std::string
                            Property* property)
     : Tile(index, code, name, category), property(property) {}
 
-void PropertyTile::onLanded(Player* player, GameSession* game) {
+void PropertyTile::onLanded(Player* player) {
     if (player == nullptr) {
         throw GameException("PropertyTile", "Player cannot be null.");
     }
     if (property == nullptr) {
         throw GameException("PropertyTile", "Property cannot be null.");
     }
-    if (game == nullptr) {
-        throw GameException("PropertyTile", "Game cannot be null.");
-    }
+
+
+    GameSession *game = GameApp::currentSession;
+    int diceNum = game->getLastDiceTotal();
+    
+    game->getBoard()->printBoard();
+    std::cout << "Pemain " << player->getUsername() << " mendarat di petak " << this->getName() << '\n';
+
     if (property->getStatus() == PropertyStatus::BANK) {
         if (property->getType() == "RAILROAD" || property->getType() == "UTILITY") {
+            std::cout << "Pemain " << player->getUsername() << " mendapatkan properti tipe " << property->getType()  << " secara otomatis\n";
             property->setOwnerID(player->getPlayerIndex());
             property->setStatus(PropertyStatus::OWNED);
             player->addProperty(property);
             return;
         }
+
+        std::stringstream ss;
+        property->printCertificate(ss);
+        std::cout << ss.rdbuf();
 
         std::cout << "Pilih aksi untuk petak properti:\n";
         std::cout << "1. Beli properti (M" << property->getPrice() << ")\n";
@@ -78,18 +92,21 @@ void PropertyTile::onLanded(Player* player, GameSession* game) {
             throw GameException("PropertyTile", "Street property type did not match StreetProperty instance.");
         }
 
-        const std::vector<Property*> ownedSameColor = owner->getPropertiesByColor(street->getColorGroup());
-        const std::vector<int> boardSameColor = game->getBoard()->getTilesByColor(street->getColorGroup());
-        const bool monopolized = !boardSameColor.empty() &&
-                                 ownedSameColor.size() == boardSameColor.size();
-
-        rent = street->getRent(0, monopolized ? 1 : 0);
-    } else if (property->getType() == "RAILROAD") {
-        rent = property->getRent(0, owner->getOwnedRailroadCount());
-    } else if (property->getType() == "UTILITY") {
-        rent = property->getRent(game->getLastDiceTotal(), owner->getOwnedUtilityCount());
-    } else {
+        rent = street->calculateRent(diceNum, street->buildingCount, street->isMonopolized());
+    } 
+    else if (property->getType() == "RAILROAD") {
+        rent = property->calculateRent(diceNum, owner->getOwnedRailroadCount(), false);
+    } 
+    else if (property->getType() == "UTILITY") {
+        rent = property->calculateRent(diceNum, owner->getOwnedUtilityCount(), false);
+    } 
+    else {
         throw GameException("PropertyTile", "Unsupported property type: " + property->getType());
+    }
+
+    if (player->getShield()) {
+        std::cout << "Pemain " << player->getUsername() << " terlindungi oleh ShieldCard! Bebas biaya sewa M" << rent << ".\n";
+        return;
     }
 
     if (!player->canAfford(rent)) {
@@ -99,6 +116,17 @@ void PropertyTile::onLanded(Player* player, GameSession* game) {
 
     player->deductMoney(rent);
     owner->addMoney(rent);
+}
+
+void PropertyTile::onPassed(Player* player) {
+    if (player == nullptr) {
+        throw GameException("PropertyTile", "Player cannot be null.");
+    }
+    
+    GameSession *game = GameApp::currentSession;
+    game->getBoard()->printBoard();
+    std::cout << "Pemain " << player->getUsername() << " melewati petak " << this->getName() << '\n';
+    std::this_thread::sleep_for(std::chrono::milliseconds(750));
 }
 
 void PropertyTile::getDisplayInfo(std::stringstream& output) const {
@@ -131,3 +159,4 @@ void PropertyTile::getDisplayInfo(std::stringstream& output) const {
 void PropertyTile::getTileType(std::stringstream& output) const {
     output << "PROPERTY";
 }
+
