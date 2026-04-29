@@ -98,8 +98,8 @@ void PropertyTile::onLanded(Player* player) {
     }
 
     int rent = 0;
-    if (property->getType() == "STREET") {
-        StreetProperty* street = dynamic_cast<StreetProperty*>(property);
+    if (property->getPropertyType() == PropertyType::STREET) {
+        StreetProperty* street = property->asStreetProperty();
         if (street == nullptr) {
             throw GameException("PropertyTile", "Street property type did not match StreetProperty instance.");
         }

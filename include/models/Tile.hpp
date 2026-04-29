@@ -13,6 +13,17 @@ class GameSession;
 class Property;
 class Card;
 
+enum class TileType {
+	START,
+	TAX,
+	PROPERTY,
+	JAIL,
+	GO_TO_JAIL,
+	FREE_PARKING,
+	FESTIVAL,
+	CARD
+};
+
 class Tile {
 public:
 	int index;
@@ -30,6 +41,9 @@ public:
 	virtual void onPassed(Player* player) = 0;
 	virtual void getDisplayInfo(std::stringstream& output) const = 0;
 	virtual void getTileType(std::stringstream& output) const = 0;
+
+	virtual TileType getType() const = 0;
+	virtual class PropertyTile* asPropertyTile() { return nullptr; }
 };
 
 
@@ -49,6 +63,7 @@ public:
 	TaxTile(int index, const std::string& code, const std::string& name, const std::string& category, TaxType taxType, int flatAmount, float percentage);
 	~TaxTile() override = default;
 
+	TileType getType() const override { return TileType::TAX; }
 	void onLanded(Player* player) override;
 	void onPassed(Player* player) override;
 	void getDisplayInfo(std::stringstream& output) const override;
@@ -70,6 +85,7 @@ public:
 	StartTile(int index, const std::string& code, const std::string& name, const std::string& category, int salary);
 	~StartTile() override = default;
 
+	TileType getType() const override { return TileType::START; }
 	void onLanded(Player* player) override;
 	void onPassed(Player* player) override;
 	void getDisplayInfo(std::stringstream& output) const override;
@@ -86,6 +102,8 @@ public:
 	PropertyTile(int index, const std::string& code, const std::string& name, const std::string& category, Property* property);
 	~PropertyTile() override = default;
 
+	TileType getType() const override { return TileType::PROPERTY; }
+	PropertyTile* asPropertyTile() override { return this; }
 	void onLanded(Player* player) override;
 	void onPassed(Player* player) override;
 	void getDisplayInfo(std::stringstream& output) const override;
@@ -100,6 +118,7 @@ public:
 	JailTile(int index, const std::string& code, const std::string& name, const std::string& category);
 	~JailTile() override = default;
 
+	TileType getType() const override { return TileType::JAIL; }
 	void onLanded(Player* player) override;
 	void onPassed(Player* player) override;
 	void getDisplayInfo(std::stringstream& output) const override;
@@ -114,6 +133,7 @@ public:
 	GoToJailTile(int index, const std::string& code, const std::string& name, const std::string& category);
 	~GoToJailTile() override = default;
 
+	TileType getType() const override { return TileType::GO_TO_JAIL; }
 	void onLanded(Player* player) override;
 	void onPassed(Player* player) override;
 	void getDisplayInfo(std::stringstream& output) const override;
@@ -128,6 +148,7 @@ public:
 	FreeParkingTile(int index, const std::string& code, const std::string& name, const std::string& category);
 	~FreeParkingTile() override = default;
 
+	TileType getType() const override { return TileType::FREE_PARKING; }
 	void onLanded(Player* player) override;
 	void onPassed(Player* player) override;
 	void getDisplayInfo(std::stringstream& output) const override;
@@ -145,6 +166,7 @@ public:
 	FestivalTile(int index, const std::string& code, const std::string& name, const std::string& category, int multiplier, int duration);
 	~FestivalTile() override = default;
 
+	TileType getType() const override { return TileType::FESTIVAL; }
 	void onLanded(Player* player) override;
 	void onPassed(Player* player) override;
 	void getDisplayInfo(std::stringstream& output) const override;
@@ -164,6 +186,7 @@ public:
 	CardTile(int index, const std::string& code, const std::string& name, const std::string& category, ActionType actionType);
 	~CardTile() override = default;
 
+	TileType getType() const override { return TileType::CARD; }
 	void onLanded(Player* player) override;
 	void onPassed(Player* player) override;
 	void getDisplayInfo(std::stringstream& output) const override;

@@ -62,7 +62,7 @@ int Board::findNearestStation(int fromIndex) {
     int bestDistance = totalTiles + 1;
 
     for (Tile* tile : tiles) {
-        auto* propertyTile = dynamic_cast<PropertyTile*>(tile);
+        auto* propertyTile = tile->asPropertyTile();
         if (propertyTile == nullptr || propertyTile->property == nullptr) {
             continue;
         }
@@ -86,7 +86,7 @@ int Board::findNearestStation(int fromIndex) {
 
 int Board::getJailIndex() {
     for(Tile* tile: tiles){
-        if (tile && dynamic_cast<const JailTile*>(tile) != nullptr){
+        if (tile && tile->getType() == TileType::JAIL){
             return tile->index;
         }
     }
@@ -124,13 +124,13 @@ std::vector<int> Board::getTilesByColor(raylib::Color color) {
     std::vector<int> result;
     for (Tile* tile : tiles) {
         if (!tile) continue;
-        auto* propertyTile = dynamic_cast<PropertyTile*>(tile);
+        auto* propertyTile = tile->asPropertyTile();
         if (propertyTile == nullptr || propertyTile->property == nullptr) {
             continue;
         }
 
-        auto* street = dynamic_cast<StreetProperty*>(propertyTile->property);
-        if (street != nullptr && street->getColorGroup().r == color.r && street->getColorGroup().g == color.g && street->getColorGroup().b == color.b) {
+        Property* prop = propertyTile->property;
+        if (prop->getPropertyType() == PropertyType::STREET && prop->getColorGroup().r == color.r && prop->getColorGroup().g == color.g && prop->getColorGroup().b == color.b) {
             result.push_back(tile->index);
         }
     }
@@ -231,7 +231,7 @@ void Board::printBoard() {
     std::map<std::string, std::string> usedColors;
     for (int i = 0; i < totalTiles; ++i) {
         if (!tiles[i]) continue;
-        auto* pt = dynamic_cast<PropertyTile*>(tiles[i]);
+        auto* pt = tiles[i]->asPropertyTile();
         if (pt && pt->property) {
             auto info = getColorInfo(pt->property->getColorGroup());
             if (!info.second.empty()) usedColors[info.first] = info.second;
@@ -287,7 +287,7 @@ void Board::printBoard() {
         std::string code = t->code;
         std::string colorLetter = "";
         std::string ansi = "";
-        auto* pt = dynamic_cast<PropertyTile*>(t);
+        auto* pt = t->asPropertyTile();
         if (pt && pt->property) {
             auto info = getColorInfo(pt->property->getColorGroup());
             colorLetter = info.first;
@@ -308,10 +308,10 @@ void Board::printBoard() {
         
         std::string buildStr = "";
         if (pt && pt->property) {
-            auto* sp = dynamic_cast<StreetProperty*>(pt->property);
-            if (sp && sp->getBuildingCount() > 0) {
-                if (sp->getBuildingCount() == 5) buildStr = "HOT";
-                else buildStr = "H" + std::to_string(sp->getBuildingCount());
+            int bCount = pt->property->getBuildingCount();
+            if (bCount > 0) {
+                if (bCount == 5) buildStr = "HOT";
+                else buildStr = "H" + std::to_string(bCount);
             }
         }
         

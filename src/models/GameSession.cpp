@@ -226,7 +226,7 @@ int GameSession::runCommand(std::string &text){
         else {
             try {
                 Tile* tile = config->board->getTileByCode(args[0]);
-                auto* pt = dynamic_cast<PropertyTile*>(tile);
+                auto* pt = tile->asPropertyTile();
                 if (pt && pt->property) {
                     std::stringstream ss; pt->property->printCertificate(ss); std::cout << ss.str();
                 } else std::cout << "Petak bukan properti.\n";
@@ -454,7 +454,7 @@ void GameSession::updateJailState(Player *currentPlayer){
 
         int idx = -1;
         for(int i = 0; i < hand.size(); i++){
-            if(dynamic_cast<FreedomCard*>(hand[i])){
+            if(hand[i]->getCardType() == CardType::FREEDOM){
                 idx = i;
                 break;
             }
@@ -523,11 +523,11 @@ void GameSession::assignSkillCard() {
 
                 SkillCard* card = skillDeck.draw(true); 
 
-                if(auto s = dynamic_cast<MoveCard*>(card)){
+                if(auto s = card->asMoveCard()){
                     s->setDistance(std::rand() % 30 + 5);
                 }   
 
-                if(auto s = dynamic_cast<DiscountCard*>(card)){
+                if(auto s = card->asDiscountCard()){
                     s->setDiscount(std::rand() % 80 + 10);
                 }
 

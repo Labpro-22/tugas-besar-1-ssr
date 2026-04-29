@@ -310,7 +310,7 @@ void LoadHandler::loadSave(std::string &saveDir, GameSession* game) {
         }
 
         Tile* tile = game->getBoard()->getTileByCode(code);
-        auto* pt = dynamic_cast<PropertyTile*>(tile);
+        auto* pt = tile->asPropertyTile();
         if (!pt || !pt->property) throw ResourceException("Tile " + code + " is not a property");
 
         Property* prop = pt->property;
@@ -331,7 +331,9 @@ void LoadHandler::loadSave(std::string &saveDir, GameSession* game) {
         else if (statusStr == "MORTGAGED") prop->setStatus(PropertyStatus::MORTGAGED);
         else throw ResourceException("Invalid status " + statusStr + " for property " + code);
 
-        if (auto* street = dynamic_cast<StreetProperty*>(prop)) {
+        
+        if (prop->getPropertyType() == PropertyType::STREET) {
+            auto *street = prop->asStreetProperty();
             if (nBuildStr == "H") street->buildingCount = 5;
             else street->buildingCount = std::stoi(nBuildStr);
         }
@@ -346,29 +348,74 @@ void LoadHandler::loadSave(std::string &saveDir, GameSession* game) {
         if (!(saveFile >> cardType)) throw ResourceException("Missing deck card type");
         
         Card* card = nullptr;
-        bool isFundCard = false;
+        bool isFundCard = false, isSkillCard = false, isActionCard = false;
         // Check both Action and Skill types for deck
-        if (cardType == "MoveCard") card = new MoveCard("Deck_" + std::to_string(i));
-        else if (cardType == "DiscountCard") card = new DiscountCard("Deck_" + std::to_string(i), 1);
-        else if (cardType == "ShieldCard") card = new ShieldCard("Deck_" + std::to_string(i), 1);
-        else if (cardType == "TeleportCard") card = new TeleportCard("Deck_" + std::to_string(i));
-        else if (cardType == "LassoCard") card = new LassoCard("Deck_" + std::to_string(i));
-        else if (cardType == "DemolitionCard") card = new DemolitionCard("Deck_" + std::to_string(i));
-        else if (cardType == "FreedomCard") card = new FreedomCard("Deck_" + std::to_string(i));
-        else if (cardType == "GoToStationCard") card = new GoToStationCard("Deck_" + std::to_string(i));
-        else if (cardType == "MoveBackCard") card = new MoveBackCard("Deck_" + std::to_string(i), 3);
-        else if (cardType == "GoToJailCard") card = new GoToJailCard("Deck_" + std::to_string(i));
-        else if (cardType == "GratificationCard") { card = new GratificationCard("Deck_" + std::to_string(i), 100); isFundCard = true;}
-        else if (cardType == "BirthdayGiftCard") { card = new BirthdayGiftCard("Deck_" + std::to_string(i), 50); isFundCard = true; }
-        else if (cardType == "DoctorFeeCard") { card = new DoctorFeeCard("Deck_" + std::to_string(i), 50); isFundCard = true; }
+        if (cardType == "MoveCard") {
+            card = new MoveCard("Deck_" + std::to_string(i));
+            isSkillCard = true;
+        }
+        else if (cardType == "DiscountCard") {
+            card = new DiscountCard("Deck_" + std::to_string(i), 1);
+            isSkillCard = true;
+        }
+        else if (cardType == "ShieldCard") {
+            card = new ShieldCard("Deck_" + std::to_string(i), 1);
+            isSkillCard = true;
+        }
+        else if (cardType == "TeleportCard") {
+            card = new TeleportCard("Deck_" + std::to_string(i));
+            isSkillCard = true;
+        }
+        else if (cardType == "LassoCard") {
+            card = new LassoCard("Deck_" + std::to_string(i));
+            isSkillCard = true;
+        }
+        else if (cardType == "DemolitionCard") {
+            card = new DemolitionCard("Deck_" + std::to_string(i));
+            isSkillCard = true;
+        }
+        else if (cardType == "FreedomCard") {
+            card = new FreedomCard("Deck_" + std::to_string(i));
+            isSkillCard = true;
+        }
+        else if (cardType == "GoToStationCard") {
+            card = new GoToStationCard("Deck_" + std::to_string(i));
+            isActionCard = true;
+        }
+        else if (cardType == "MoveBackCard") {
+            card = new MoveBackCard("Deck_" + std::to_string(i), 3);
+            isActionCard = true;
+        }
+        else if (cardType == "GoToJailCard") { 
+            card = new GoToJailCard("Deck_" + std::to_string(i));
+            isActionCard = true;
+        }
+        else if (cardType == "GratificationCard") { 
+            card = new GratificationCard("Deck_" + std::to_string(i), 100); 
+            isActionCard = true;
+            isFundCard = true;
+        }
+        else if (cardType == "BirthdayGiftCard") { 
+            card = new BirthdayGiftCard("Deck_" + std::to_string(i), 50); 
+            isActionCard = true;
+            isFundCard = true; 
+        }
+        else if (cardType == "DoctorFeeCard") { 
+            card = new DoctorFeeCard("Deck_" + std::to_string(i), 50); 
+            isActionCard = true;
+            isFundCard = true; 
+        }
         else throw ResourceException("Unknown deck card type: " + cardType);
 
-        if (auto sc = dynamic_cast<SkillCard*>(card)){
+
+        if (isSkillCard){
+            auto *sc = card->asSkillCard();
             game->addSkillCard(sc);
         }
-        else if(auto sc = dynamic_cast<ActionCard*>(card)){
-            if(isFundCard) game->addFundCard(sc);
-            else game->addOppoturnityCard(sc);
+        else if(isActionCard){
+            auto ac = card->asActionCard();
+            if(isFundCard) game->addFundCard(ac);
+            else game->addOppoturnityCard(ac);
         }
         else throw ResourceException("Invalid card type (not a skill card or action card)");
     }

@@ -15,6 +15,12 @@ enum class PropertyStatus {
     MORTGAGED
 };
 
+enum class PropertyType {
+    STREET,
+    RAILROAD,
+    UTILITY
+};
+
 class Property {
 protected:
     int ID;
@@ -28,7 +34,6 @@ protected:
     PropertyStatus status;
     int festivalMultiplier;
     int festivalDuration;
-    
     
 public:
     Property(int ID, string code, string name, string type, int price, int mortgageValue, raylib::Color color, int festivalMultiplier, int festivalDuration);
@@ -47,6 +52,17 @@ public:
     virtual void printCertificate(stringstream& os) const;
 
     /*=== Getters ===*/
+    virtual PropertyType getPropertyType() const = 0;
+    virtual class StreetProperty* asStreetProperty() { return nullptr; }
+    virtual class RailroadProperty* asRailroadProperty() { return nullptr; }
+    virtual class UtilityProperty* asUtilityProperty() { return nullptr; }
+
+    virtual int getBuildingCount() const { return 0; }
+    virtual int getBuildCost() const { return 0; }
+    virtual bool canBuild() const { return false; }
+    virtual void build() {}
+    virtual int sellAllBuildings() { return 0; }
+
     int getID() const { return ID; }
     string getCode() const { return code; }
     string getName() const { return name; }
@@ -85,14 +101,16 @@ public:
     StreetProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color, int housePrice, int hotelPrice, vector<int> rentLevels);
     ~StreetProperty();
 
+    PropertyType getPropertyType() const override { return PropertyType::STREET; }
+    StreetProperty *asStreetProperty() override { return this; }
     int calculateRent(int diceNum, int ownedCountOfType, bool isMono) override;
     int sellBuilding();
-    int getBuildCost() const;
+    int getBuildCost() const override;
     bool canBuild() const;
     void build();
-    int sellAllBuildings();
+    int sellAllBuildings() override;
 
-    int getBuildingCount()const {return buildingCount;}
+    int getBuildingCount() const override {return buildingCount;}
     int getTotalValue() const override;
     int getSellValue() const override;
     bool isMonopolized() const;
@@ -106,6 +124,8 @@ public:
     RailroadProperty(int ID, string code, string name, int price, int mortgageValue);
     ~RailroadProperty();
 
+    PropertyType getPropertyType() const override { return PropertyType::RAILROAD; }
+    RailroadProperty *asRailroadProperty() override { return this; }
     int calculateRent(int diceNum, int ownedCountOfType, bool isMono) override;
 };
 
@@ -117,5 +137,8 @@ public:
     UtilityProperty(int ID, string code, string name, int price, int mortgageValue);
     ~UtilityProperty();
     
+    PropertyType getPropertyType() const override { return PropertyType::UTILITY; }
+    UtilityProperty* asUtilityProperty() override { return this; }
     int calculateRent(int diceNum, int ownedCountOfType, bool isMono) override;
 };
+;

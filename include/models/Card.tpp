@@ -73,20 +73,22 @@ template <typename T>
 std::map<std::string, int> CardDeck<T>::getCardCounts() const {
     std::map<std::string, int> counts;
     for (T* card : activePile) {
-        if (dynamic_cast<MoveCard*>(card)) counts["MoveCard"]++;
-        else if (dynamic_cast<DiscountCard*>(card)) counts["DiscountCard"]++;
-        else if (dynamic_cast<ShieldCard*>(card)) counts["ShieldCard"]++;
-        else if (dynamic_cast<TeleportCard*>(card)) counts["TeleportCard"]++;
-        else if (dynamic_cast<LassoCard*>(card)) counts["LassoCard"]++;
-        else if (dynamic_cast<DemolitionCard*>(card)) counts["DemolitionCard"]++;
-        else if (dynamic_cast<FreedomCard*>(card)) counts["FreedomCard"]++;
-        else if (dynamic_cast<GoToStationCard*>(card)) counts["GoToStationCard"]++;
-        else if (dynamic_cast<MoveBackCard*>(card)) counts["MoveBackCard"]++;
-        else if (dynamic_cast<GoToJailCard*>(card)) counts["GoToJailCard"]++;
-        else if (dynamic_cast<GratificationCard*>(card)) counts["GratificationCard"]++;
-        else if (dynamic_cast<BirthdayGiftCard*>(card)) counts["BirthdayGiftCard"]++;
-        else if (dynamic_cast<DoctorFeeCard*>(card)) counts["DoctorFeeCard"]++;
-        else counts["Unknown"]++;
+        switch (card->getCardType()) {
+            case CardType::MOVE: counts["MoveCard"]++; break;
+            case CardType::DISCOUNT: counts["DiscountCard"]++; break;
+            case CardType::SHIELD: counts["ShieldCard"]++; break;
+            case CardType::TELEPORT: counts["TeleportCard"]++; break;
+            case CardType::LASSO: counts["LassoCard"]++; break;
+            case CardType::DEMOLITION: counts["DemolitionCard"]++; break;
+            case CardType::FREEDOM: counts["FreedomCard"]++; break;
+            case CardType::ACTION_STATION: counts["GoToStationCard"]++; break;
+            case CardType::ACTION_MOVEBACK: counts["MoveBackCard"]++; break;
+            case CardType::ACTION_JAIL: counts["GoToJailCard"]++; break;
+            case CardType::ACTION_GRAT: counts["GratificationCard"]++; break;
+            case CardType::ACTION_BIRTHDAY: counts["BirthdayGiftCard"]++; break;
+            case CardType::ACTION_DOCTOR: counts["DoctorFeeCard"]++; break;
+            default: counts["Unknown"]++; break;
+        }
     }
     return counts;
 }

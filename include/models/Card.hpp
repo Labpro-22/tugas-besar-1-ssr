@@ -11,6 +11,22 @@ class Player;
 class GameSession;
 
 
+enum class CardType {
+    MOVE,
+    DISCOUNT,
+    SHIELD,
+    TELEPORT,
+    LASSO,
+    DEMOLITION,
+    FREEDOM,
+    ACTION_STATION,
+    ACTION_MOVEBACK,
+    ACTION_JAIL,
+    ACTION_GRAT,
+    ACTION_BIRTHDAY,
+    ACTION_DOCTOR
+};
+
 class Card {
 public:
     std::string id;
@@ -19,6 +35,19 @@ public:
     Card(std::string id, std::string type);
     virtual ~Card() = default;
     virtual void execute(Player *player) = 0;
+
+    virtual CardType getCardType() const = 0;
+    virtual class SkillCard* asSkillCard() { return nullptr; }
+    virtual class ActionCard* asActionCard() { return nullptr; }
+    virtual class MoveCard* asMoveCard() { return nullptr; }
+    virtual class DiscountCard* asDiscountCard() { return nullptr; }
+    virtual class FreedomCard* asFreedomCard() { return nullptr; }
+
+    virtual int getDistance() const { return 0; }
+    virtual float getDiscountPercentage() const { return 0.0f; }
+    virtual int getDuration() const { return 0; }
+    virtual int getStep() const { return 0; }
+    virtual int getAmount() const { return 0; }
 };
 
 
@@ -36,6 +65,7 @@ public:
 class GoToStationCard : public ActionCard {
 public:
     GoToStationCard(std::string id);
+    CardType getCardType() const override { return CardType::ACTION_STATION; }
     void execute(Player *player) override;
 };
 
@@ -46,6 +76,8 @@ public:
     int step;
 
     MoveBackCard(std::string id, int step);
+    CardType getCardType() const override { return CardType::ACTION_MOVEBACK; }
+    int getStep() const override { return step; }
     void execute(Player *player) override;
 };
 
@@ -54,6 +86,7 @@ public:
 class GoToJailCard : public ActionCard {
 public:
     GoToJailCard(std::string id);
+    CardType getCardType() const override { return CardType::ACTION_JAIL; }
     void execute(Player *player) override;
 };
 
@@ -64,6 +97,8 @@ public:
     int amount;
 
     GratificationCard(std::string id, int amount);
+    CardType getCardType() const override { return CardType::ACTION_GRAT; }
+    int getAmount() const override { return amount; }
     void execute(Player *player) override;
 };
 
@@ -74,6 +109,8 @@ public:
     int amount;
 
     BirthdayGiftCard(std::string id, int amount);
+    CardType getCardType() const override { return CardType::ACTION_BIRTHDAY; }
+    int getAmount() const override { return amount; }
     void execute(Player *player) override;
 };
 
@@ -84,6 +121,8 @@ public:
     int amount;
 
     DoctorFeeCard(std::string id, int amount);
+    CardType getCardType() const override { return CardType::ACTION_DOCTOR; }
+    int getAmount() const override { return amount; }
     void execute(Player *player) override;
 };
 
@@ -96,6 +135,7 @@ public:
     SkillCard(std::string id, std::string name);
     void execute(Player *player);
     virtual void use(Player *player) = 0;
+    SkillCard* asSkillCard() override { return this; }
 };
 
 
@@ -105,6 +145,9 @@ public:
     int distance;
 
     MoveCard(std::string id);
+    CardType getCardType() const override { return CardType::MOVE; }
+    MoveCard* asMoveCard() override { return this; }
+    int getDistance() const override { return distance; }
     void setDistance(int dist){ 
         distance = dist; 
         if(auto pos = skillName.find(" ("); pos != std::string::npos) skillName.erase(pos);
@@ -121,6 +164,10 @@ public:
     int duration;
 
     DiscountCard(std::string id, int duration);
+    CardType getCardType() const override { return CardType::DISCOUNT; }
+    DiscountCard* asDiscountCard() override { return this; }
+    float getDiscountPercentage() const override { return static_cast<float>(discount); }
+    int getDuration() const override { return duration; }
     void setDiscount(int disc){ 
         discount = disc;  
         if(auto pos = skillName.find(" ("); pos != std::string::npos) skillName.erase(pos);
@@ -136,6 +183,8 @@ public:
     int duration;
 
     ShieldCard(std::string id, int duration);
+    CardType getCardType() const override { return CardType::SHIELD; }
+    int getDuration() const override { return duration; }
     void use(Player *player) override;
 };
 
@@ -144,6 +193,7 @@ public:
 class TeleportCard : public SkillCard {
 public:
     TeleportCard(std::string id);
+    CardType getCardType() const override { return CardType::TELEPORT; }
     void use(Player *player) override;
 };
 
@@ -152,6 +202,7 @@ public:
 class LassoCard : public SkillCard {
 public:
     LassoCard(std::string id);
+    CardType getCardType() const override { return CardType::LASSO; }
     void use(Player *player) override;
 };
 
@@ -166,6 +217,7 @@ private:
 
 public:
     DemolitionCard(std::string id);
+    CardType getCardType() const override { return CardType::DEMOLITION; }
     void use(Player *player) override;
 };
 
@@ -174,6 +226,8 @@ public:
 class FreedomCard : public SkillCard {
 public:
     FreedomCard(std::string id);
+    CardType getCardType() const override { return CardType::FREEDOM; }
+    FreedomCard* asFreedomCard() override { return this; }
     void use(Player *player) override;
 };
 
@@ -201,3 +255,4 @@ public:
 };
 
 #include "Card.tpp"
+

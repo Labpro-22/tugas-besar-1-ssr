@@ -34,9 +34,11 @@ std::string propertyStatusToString(PropertyStatus status) {
 }
 
 std::string propertyTypeToSaveType(Property* property) {
-    if (dynamic_cast<StreetProperty*>(property)) return "street";
-    if (dynamic_cast<RailroadProperty*>(property)) return "railroad";
-    if (dynamic_cast<UtilityProperty*>(property)) return "utility";
+    switch(property->getPropertyType()) {
+        case PropertyType::STREET: return "street";
+        case PropertyType::RAILROAD: return "railroad";
+        case PropertyType::UTILITY: return "utility";
+    }
     return "unknown";
 }
 
@@ -47,9 +49,12 @@ std::string skillCardToLine(SkillCard* card) {
     if(auto pos = skillNameNoInfo.find(" ("); pos != std::string::npos) skillNameNoInfo.erase(pos);
     out << skillNameNoInfo;
 
-    if (auto* mc = dynamic_cast<MoveCard*>(card)) {
+    if (card->getCardType() == CardType::MOVE) {
+        auto* mc = card->asMoveCard();
         out << " " << mc->distance;
-    } else if (auto* dc = dynamic_cast<DiscountCard*>(card)) {
+    } 
+    else if (card->getCardType() == CardType::DISCOUNT) {
+        auto* dc = card->asDiscountCard();
         out << " " << dc->discount;
     }
 
@@ -113,15 +118,20 @@ void SaveHandler::save(GameSession* game) {
     std::vector<PropertyTile*> propertyTiles;
     for (int i = 0; i < game->getBoard()->getTileCount(); ++i) {
         Tile* tile = game->getBoard()->getTile(i);
-        auto* propertyTile = dynamic_cast<PropertyTile*>(tile);
-        if (propertyTile && propertyTile->property) propertyTiles.push_back(propertyTile);
+        if(tile->getType() == TileType::PROPERTY){
+            auto* propertyTile = tile->asPropertyTile();
+            if (propertyTile->property) propertyTiles.push_back(propertyTile);
+        }
     }
 
     saveFile << propertyTiles.size() << "\n";
     for (PropertyTile* propertyTile : propertyTiles) {
+        
         Property* property = propertyTile->property;
         std::string buildingCount = "0";
-        if (auto* street = dynamic_cast<StreetProperty*>(property)) {
+
+        if (property->getPropertyType() == PropertyType::STREET) {
+            auto* street = property->asStreetProperty();
             buildingCount = street->getBuildingCount() == 5 ? "H" : std::to_string(street->getBuildingCount());
         }
 

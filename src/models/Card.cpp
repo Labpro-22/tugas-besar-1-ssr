@@ -209,11 +209,13 @@ void DemolitionCard::use(Player *player) {
     Property* p = t.prop;
     Player* owner = t.owner;
 
+    // Reset property
     p->setOwnerID(-1);
     p->setStatus(PropertyStatus::BANK);
-    if (StreetProperty* sp = dynamic_cast<StreetProperty*>(p)) {
-        sp->buildingCount = 0;
+    if (p->getPropertyType() == PropertyType::STREET) {
+        p->asStreetProperty()->buildingCount = 0;
     }
+
 
     owner->removeProperty(p);
 

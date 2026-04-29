@@ -86,8 +86,8 @@ int Player::getTotalWealth() {
 std::vector<Property*> Player::getPropertiesByColor(raylib::Color color) {
     std::vector<Property*> res;
     for (auto p : properties) {
-        if (auto sp = dynamic_cast<StreetProperty*>(p)) {
-            if (sp->getColorGroup().r == color.r && sp->getColorGroup().g == color.g && sp->getColorGroup().b == color.b) res.push_back(p);
+        if (p->getPropertyType() == PropertyType::STREET) {
+            if (p->getColorGroup().r == color.r && p->getColorGroup().g == color.g && p->getColorGroup().b == color.b) res.push_back(p);
         }
     }
     return res;
@@ -143,8 +143,8 @@ void Player::printProperties() {
             case PropertyStatus::MORTGAGED: std::cout << "MORTGAGED"; break;
             default: std::cout << "UNKNOWN"; break;
         }
-        if (auto* sp = dynamic_cast<StreetProperty*>(p)) {
-            std::cout << " | Bangunan: " << sp->getBuildingCount();
+        if (p->getPropertyType() == PropertyType::STREET) {
+            std::cout << " | Bangunan: " << p->getBuildingCount();
         }
         std::cout << "\n";
     }

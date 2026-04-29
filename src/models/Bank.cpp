@@ -169,7 +169,7 @@ std::vector<Property*> Bank::settleBankruptcyToBank(Player* debtor, int turn) {
     for (Property* prop : ownedProps) {
         // Demolish buildings if street
         if (prop->getType() == "STREET") {
-            StreetProperty* sp = static_cast<StreetProperty*>(prop);
+            StreetProperty* sp = prop->asStreetProperty();
             if (sp->buildingCount > 0) {
                 std::cout << "Bangunan di " << prop->getName() << " dihancurkan.\n";
                 sp->buildingCount = 0; // direct reset; Bank owns the demolition right
@@ -267,16 +267,15 @@ void Bank::handleMortgage(Player* player) {
     int choice = player->chooseInput(choices);
     Property* p = owned[choice-1];
 
-    if (auto* sp = dynamic_cast<StreetProperty*>(p)) {
-        std::vector<int> sameColorIndices = game->getBoard()->getTilesByColor(sp->getColorGroup());
+    if (p->getPropertyType() == PropertyType::STREET) {
+        std::vector<int> sameColorIndices = game->getBoard()->getTilesByColor(p->getColorGroup());
         int totalRefund = 0;
         for (int idx : sameColorIndices) {
             Tile* tile = game->getBoard()->getTile(idx);
-            if (auto* pt = dynamic_cast<PropertyTile*>(tile)) {
-                if (auto* street = dynamic_cast<StreetProperty*>(pt->property)) {
-                    if (street->getBuildingCount() > 0) {
-                        totalRefund += street->sellAllBuildings();
-                    }
+            auto* pt = tile->asPropertyTile();
+            if (pt && pt->property) {
+                if (pt->property->getBuildingCount() > 0) {
+                    totalRefund += pt->property->sellAllBuildings();
                 }
             }
         }
@@ -326,17 +325,20 @@ void Bank::handleUnmortgage(Player* player) {
 void Bank::handleBuild(Player* player) {
     GameSession *game = GameApp::currentSession;
 
-    std::vector<StreetProperty*> eligible; 
+    std::vector<Property*> eligible; 
     std::vector<int> choices;
     for (size_t i = 0; i < player->getAllProperties().size(); ++i) {
-        if (auto* sp = dynamic_cast<StreetProperty*>(player->getAllProperties()[i])) {
-            if (sp->canBuild()) { eligible.push_back(sp); choices.push_back(i + 1); std::cout << i + 1 << ". " << sp->getName() << "\n"; }
+        Property* p = player->getAllProperties()[i];
+        if (p->canBuild()) { 
+            eligible.push_back(p); 
+            choices.push_back(i + 1); 
+            std::cout << i + 1 << ". " << p->getName() << "\n"; 
         }
     }
 
     if (choices.empty()) { std::cout << "Tidak ada properti untuk dibangun.\n"; return; }
     int choice = player->chooseInput(choices);
-    StreetProperty* sp = eligible[choice-1];
+    Property* sp = eligible[choice-1];
     
     int cost = sp->getBuildCost();
     if (player->getDiscount() > 0) {
@@ -385,9 +387,7 @@ void Bank::handleBankruptcy(Player* debtor, Player* creditor, int amount) {
                 if (p->getStatus() == PropertyStatus::OWNED) {
                     availableActions.push_back({1, p, p->getSellValue()});
                     std::cout << availableActions.size() << ". " << p->getName() << " (" << p->getCode() << ") Harga Jual: M" << p->getSellValue();
-                    if (auto* sp = dynamic_cast<StreetProperty*>(p)) {
-                        if (sp->buildingCount > 0) std::cout << " (termasuk bangunan)";
-                    }
+                    if (p->getBuildingCount() > 0) std::cout << " (termasuk bangunan)";
                     std::cout << "\n";
                 }
             }
