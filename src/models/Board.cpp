@@ -157,7 +157,7 @@ void Board::initializeDefault(){
     setTile(new TaxTile(4, "PPH", "Pajak Penghasilan", "PAJAK", TaxTile::TAX_PPH, 150, 10.0), 4);
     setTile(new PropertyTile(5, "GBR", "Stasiun Gambir", "PROPERTY", new RailroadProperty(5, "GBR", "STASIUN_GAMBIR", 200, 100)), 5);
     setTile(new PropertyTile(6, "BGR", "Bogor", "PROPERTY", new StreetProperty(6, "BGR", "BOGOR", 100, 80, colorLightBlue, 20, 50, {6, 30, 90, 270, 400, 550})), 6);
-    setTile(new FestivalTile(7, "FES", "Festival", "FESTIVAL", 0.0, 0), 7);
+    setTile(new FestivalTile(7, "FES", "Festival", "FESTIVAL", 2, 3), 7);
     setTile(new PropertyTile(8, "DPK", "Depok", "PROPERTY", new StreetProperty(8, "DPK", "DEPOK", 100, 80, colorLightBlue, 20, 50, {6, 30, 90, 270, 400, 550})), 8);
     setTile(new PropertyTile(9, "BKS", "Bekasi", "PROPERTY", new StreetProperty(9, "BKS", "BEKASI", 120, 90, colorLightBlue, 20, 50, {8, 40, 100, 300, 450, 600})), 9);
     setTile(new JailTile(10, "PEN", "Penjara", "SPESIAL"), 10);
@@ -183,7 +183,7 @@ void Board::initializeDefault(){
     setTile(new GoToJailTile(30, "PPJ", "Petak Pergi ke Penjara", "SPESIAL"), 30);
     setTile(new PropertyTile(31, "BDG", "Bandung", "PROPERTY", new StreetProperty(31, "BDG", "BANDUNG", 300, 250, colorGreen, 200, 200, {26, 130, 390, 900, 1100, 1275})), 31);
     setTile(new PropertyTile(32, "DEN", "Denapasar", "PROPERTY", new StreetProperty(32, "DEN", "DENPASAR", 300, 260, colorGreen, 200, 200, {26, 130, 390, 900, 1100, 1275})), 32);
-    setTile(new FestivalTile(33, "FES", "Festival", "FESTIVAL", 0.0, 0), 33);
+    setTile(new FestivalTile(33, "FES", "Festival", "FESTIVAL", 2, 3), 33);
     setTile(new PropertyTile(34, "MTR", "Mataram", "PROPERTY", new StreetProperty(34, "MTR", "MATARAM", 320, 280, colorGreen, 200, 200, {28, 150, 450, 1000, 1200, 1400})), 34);
     setTile(new PropertyTile(35, "GUB", "Stasiun Gubeng", "PROPERTY", new RailroadProperty(35, "GUB", "STASIUN_GUBENG", 200, 100)), 35);
     setTile(new CardTile(36, "KSP", "Kesempatan", "KARTU", CardTile::ActionType::OPPOTURNITY), 36);

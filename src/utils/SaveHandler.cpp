@@ -3,6 +3,7 @@
 #include "Board.hpp"
 #include "Property.hpp"
 #include "Tile.hpp"
+#include "Card.hpp"
 #include "TransactionLogger.hpp"
 #include "AppException.hpp"
 #include <fstream>
@@ -41,11 +42,16 @@ std::string propertyTypeToSaveType(Property* property) {
 
 std::string skillCardToLine(SkillCard* card) {
     std::ostringstream out;
-    out << card->skillName;
+    
+    std::string skillNameNoInfo = card->skillName;
+    if(auto pos = skillNameNoInfo.find(" ("); pos != std::string::npos) skillNameNoInfo.erase(pos);
+    out << skillNameNoInfo;
 
-    if (auto* move = dynamic_cast<MoveCard*>(card)) out << " " << move->distance;
-    else if (auto* discount = dynamic_cast<DiscountCard*>(card)) out << " " << discount->discount << " " << discount->duration;
-    else if (auto* shield = dynamic_cast<ShieldCard*>(card)) out << " " << shield->duration;
+    if (auto* mc = dynamic_cast<MoveCard*>(card)) {
+        out << " " << mc->distance;
+    } else if (auto* dc = dynamic_cast<DiscountCard*>(card)) {
+        out << " " << dc->discount;
+    }
 
     return out.str();
 }
@@ -65,7 +71,7 @@ SaveHandler::SaveHandler(const std::string& path) : savePath(path) {}
 
 void SaveHandler::save(GameSession* game) {
     if (game == nullptr) {
-        throw ResourceException("Cannot save null game session");
+        throw GameException("SaveHandler", "Cannot save null game session");
     }
 
     std::ofstream saveFile(dataPath(savePath));
@@ -75,14 +81,14 @@ void SaveHandler::save(GameSession* game) {
 
     std::vector<Player*>& players = game->getPlayers();
     if (players.empty()) {
-        throw ResourceException("Cannot save game without players");
+        throw GameException("SaveHandler", "Cannot save game without players");
     }
 
     saveFile << game->getCurrentTurn() << " " << game->getMaxTurn() << "\n";
     saveFile << players.size() << "\n";
 
     for (Player* player : players) {
-        if (player == nullptr) throw ResourceException("Cannot save null player");
+        if (player == nullptr) throw GameException("SaveHandler", "Cannot save null player");
         Tile* tile = game->getBoard()->getTile(player->getPosition());
         saveFile << player->getUsername() << " "
                  << player->getMoney() << " "
@@ -91,12 +97,12 @@ void SaveHandler::save(GameSession* game) {
 
         saveFile << player->getHand().size() << "\n";
         for (SkillCard* card : player->getHand()) {
-            if (card == nullptr) throw ResourceException("Cannot save null player card");
+            if (card == nullptr) throw GameException("SaveHandler", "Cannot save null player card");
             saveFile << skillCardToLine(card) << "\n";
         }
     }
 
-    for (size_t i = 0; i < players.size(); ++i) {
+    for (int i = 0; i < players.size(); ++i) {
         if (i > 0) saveFile << " ";
         saveFile << players[i]->getUsername();
     }
@@ -131,9 +137,15 @@ void SaveHandler::save(GameSession* game) {
                  << buildingCount << "\n";
     }
 
-    // CardDeck does not expose card order. Keep the required section valid and
-    // rebuild a default deck after load if this section is empty.
-    saveFile << 0 << "\n";
+
+    std::vector<SkillCard*> deckCards = game->getSkillDeck().getActivePileCards();
+    saveFile << deckCards.size() << "\n";
+    for (SkillCard* card : deckCards) {
+        std::string skillNameNoInfo = card->skillName;
+        if(auto pos = skillNameNoInfo.find(" ("); pos != std::string::npos) skillNameNoInfo.erase(pos);
+        saveFile << skillNameNoInfo << "\n";
+    }
+
 
     const std::vector<LogEntry>& entries = game->getLogger()->getEntries();
     saveFile << entries.size() << "\n";

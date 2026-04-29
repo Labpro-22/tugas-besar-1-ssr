@@ -1,6 +1,7 @@
 #include "GameSession.hpp"
 #include "Tile.hpp"
 #include "Property.hpp"
+#include "Bank.hpp"
 #include "TransactionLogger.hpp"
 #include "SaveLoadHandler.hpp"
 #include "Auction.hpp"
@@ -20,6 +21,8 @@ GameSession::GameSession(GameConfig *config) :
     currentPlayerIndex(0), isRunning(true), hasCurrentPlayerActed(false), logger(new TransactionLogger()), config(config)
 {
     config->board->initializeDefault();
+    
+    bank = new Bank(config->goSalary, config->jailFine, config->railroadRentTable, config->utilityMultiplierTable);
 
     int count;
     std::cout << "Masukkan jumlah pemain (2-4): ";
@@ -47,6 +50,8 @@ GameSession::GameSession(GameConfig *config) :
     initializeDefaultOppoturnity();
     initializeDefaultFund();
     initializeDefaultSkill();
+
+    this->log("LOAD", "Permainan baru berhasil dimuat");
 }
 
 
@@ -54,28 +59,54 @@ GameSession::GameSession(GameConfig *config) :
 GameSession::GameSession(std::string &saveDataDir, GameConfig *config) : 
     startingBalance(config ? config->initialBalance : 1000), maxTurn(config ? config->maxTurn : 40), currentTurn(1),
     currentPlayerIndex(0), isRunning(true), hasCurrentPlayerActed(false), logger(new TransactionLogger()), config(config)
-{
+{    
+    bank = new Bank(config->goSalary, config->jailFine, config->railroadRentTable, config->utilityMultiplierTable);
+
     LoadHandler loader;
     loader.loadSave(saveDataDir, this);
+    this->log("LOAD", "Permainan berhasil dimuat melalui data dari " + saveDataDir);
 
-    if(fundDeck.isEmpty()) initializeDefaultFund();
-    if(oppoturnityDeck.isEmpty()) initializeDefaultOppoturnity();
-    if(skillDeck.isEmpty()) initializeDefaultSkill();
+    initializeDefaultFund();
+    initializeDefaultOppoturnity();
+    initializeDefaultSkill();
 }
 
 
 
 void GameSession::initializeDefaultSkill() {
-    for(int i = 0; i < 4; i++) skillDeck.addCard(new MoveCard("Move" + std::to_string(i)));
 
-    for(int i = 0; i < 3; i++) skillDeck.addCard(new DiscountCard("Discount" + std::to_string(i), 1));
+    std::map<std::string, int> countMap = skillDeck.getCardCounts();
+    if(countMap["Unknown"] > 0) throw ResourceException("Invalid SkillCard");
+    if(countMap["MoveCard"] > 4) throw ResourceException("Invalid number of MoveCard");
+    if(countMap["DiscountCard"] > 3) throw ResourceException("Invalid number of DiscountCard");
+    if(countMap["ShieldCard"] > 2) throw ResourceException("Invalid number of ShieldCard");
+    if(countMap["TeleportCard"] > 2) throw ResourceException("Invalid number of TeleportCard");
+    if(countMap["LassoCard"] > 2) throw ResourceException("Invalid number of LassoCard");
+    if(countMap["DemolitionCard"] > 2) throw ResourceException("Invalid number of DemolitionCard");
+    if(countMap["FreedomCard"] > 2) throw ResourceException("Invalid number of FreedomCard");
+
+    for(int i = 0; i < 2 - countMap["MoveCard"]; i++) 
+        skillDeck.addCardToDiscarded(new MoveCard("Move" + std::to_string(i)));
+
+    for(int i = 0; i < 3 - countMap["DiscountCard"]; i++)
+        skillDeck.addCardToDiscarded(new DiscountCard("Discount" + std::to_string(i), 1));
     
-    for(int i = 0; i < 2; i++) {
-        skillDeck.addCard(new ShieldCard("Shield" + std::to_string(i), 1));
-        skillDeck.addCard(new TeleportCard("Teleport" + std::to_string(i)));
-        skillDeck.addCard(new LassoCard("Lasso" + std::to_string(i)));
-        skillDeck.addCard(new DemolitionCard("Demolition" +std::to_string(i)));
-    }
+    for(int i = 0; i < 2 - countMap["ShieldCard"]; i++) 
+        skillDeck.addCardToDiscarded(new ShieldCard("Shield" + std::to_string(i), 1));
+    
+    for(int i = 0; i < 2 - countMap["TeleportCard"]; i++) 
+        skillDeck.addCardToDiscarded(new TeleportCard("Teleport" + std::to_string(i)));
+
+    for(int i = 0; i < 2 - countMap["LassoCard"]; i++) 
+        skillDeck.addCardToDiscarded(new LassoCard("Lasso" + std::to_string(i)));
+
+    for(int i = 0; i < 2 - countMap["DemolitionCard"]; i++) 
+        skillDeck.addCardToDiscarded(new DemolitionCard("Demolition" +std::to_string(i)));
+
+    for(int i = 0; i < 2 - countMap["FreedomCard"]; i++) 
+        skillDeck.addCardToDiscarded(new FreedomCard("Freedom" +std::to_string(i)));
+
+
     skillDeck.shuffle();
 }
 
@@ -111,8 +142,8 @@ void GameSession::beginCurrentPlayerTurn() {
 
 
 GameSession::~GameSession() {
-    delete config->board;
     for(Player* p : players) delete p;
+    delete bank;
     delete logger;
 }
 
@@ -136,14 +167,19 @@ void GameSession::startGame(){
     std::cout << "Selamat datang di Nimonspoli!\n";
 
     config->board->printBoard();
-    assignSkillCard();
+
+    bool foundNotEmptyHand = false;
+    for(Player *p : players){
+        if(!p->getHand().empty()) foundNotEmptyHand = true;
+    }
+    if(!foundNotEmptyHand) assignSkillCard();
 
     while(isRunning){
         Player* currentPlayer = getCurrentPlayer();
 
         std::cout << "\n[Turn " << currentTurn << "] Giliran " << currentPlayer->getUsername() << " (M" << currentPlayer->getMoney() << ")\n> ";
         if(currentPlayer->isJailed()){
-            handleJail(currentPlayer);
+            updateJailState(currentPlayer);
             continue;
         }
 
@@ -151,7 +187,7 @@ void GameSession::startGame(){
         if(!std::getline(std::cin, line)) break;
         runCommand(line);
 
-        if(currentTurn > maxTurn || hasWinner()) endGame();
+        if((maxTurn > 0 && currentTurn > maxTurn) || hasWinner()) endGame();
     }
 }
 
@@ -200,15 +236,15 @@ int GameSession::runCommand(std::string &text){
     else if(command == "CETAK_PROPERTI") currentPlayer->printProperties();
     else if(command == "GADAI") {
         hasCurrentPlayerActed = true;
-        handleGadai(currentPlayer);
+        bank->handleMortgage(currentPlayer);
     }
     else if(command == "TEBUS") {
         hasCurrentPlayerActed = true;
-        handleTebus(currentPlayer);
+        bank->handleUnmortgage(currentPlayer);
     }
     else if(command == "BANGUN") {
         hasCurrentPlayerActed = true;
-        handleBangun(currentPlayer);
+        bank->handleBuild(currentPlayer);
     }
     else if(command == "GUNAKAN_KEMAMPUAN") {
         if(currentPlayer->hasUsedSkill){
@@ -233,10 +269,10 @@ int GameSession::runCommand(std::string &text){
             }
 
             try {
-                logger->log(currentTurn, currentPlayer->getUsername(), "SIMPAN", saveFileName);
                 SaveHandler saver(saveFileName);
                 saver.save(this);
                 std::cout << "Permainan berhasil disimpan ke data/" << saveFileName << "\n";
+                this->log("SAVE", "Pemain " + currentPlayer->getUsername() + " berhasil menyimpan sesi permainan ke " + saveFileName);
             } catch (AppException &e) {
                 std::cout << "Gagal menyimpan permainan: " << e.what() << "\n";
             }
@@ -327,16 +363,63 @@ bool GameSession::hasWinner() {
 
 
 void GameSession::endGame() { 
+    std::cout << "\n\nTelah ditemukan pemenang dari permainan...\n";
     isRunning = false; 
 
-    Player *winner = nullptr;
-    for(auto p : players) if(p->isActive()) winner = p;
+    std::vector<Player*> winner;
+    int maxMoney = 0, maxCardCount = 0;
+    for(Player *p : players){
+        if(!p->isBankrupt()){
+            if(p->getMoney() > maxMoney) maxMoney = p->getMoney();
+            if(p->getCardCount() > maxCardCount) maxCardCount = p->getCardCount();
+        }
+    }
 
-    if (winner) std::cout << "Pemenang: " << winner->getUsername() << "\n\n";
+    for(Player *p: players){
+        if(!p->isBankrupt()){
+            if(p->getMoney() == maxMoney && p->getCardCount() == maxCardCount) winner.push_back(p);
+        }
+    }
+
+    std::cout << "\n==================================================================\n";
+    std::cout << "Pemenang: ";
+    for(int i = 0; i < winner.size(); i++){
+        std::cout << "   " << i+1 << ".) " << winner[i]->getUsername()  << " (Player " << winner[i]->getPlayerIndex() << ")\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+    }
+    std::cout << "==================================================================\n";
+    std::cout << "    ⡴⢋⡉⢧⠀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀    \n";
+    std::cout << "⠀⠀⠀⠻⡁⢖⡾⠤⣠⡿⣄⣙⡄⠀⠀⠀⠀⠀⢀⣀⡤⠤⠤⢤⣒⡊⠉⠉⠉⠉⠉⠉⠉⠉⠉⠒⠢⠤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⢰⡏⢛⡶⣽⠈⢰⠀⠉⢯⡷⠛⠀⠀⠀⢀⡤⠚⠉⢀⣀⣠⢤⣀⣀⠉⠓⢄⠀⠀⠀⠀⣀⡤⠔⠒⠒⠒⠢⠭⣓⢤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠈⠙⠚⠒⢧⡀⠈⢦⢀⣸⠁⠀⠀⠀⣠⠋⠀⡠⠚⠉⠀⠀⠀⠀⠈⠑⢦⡀⠳⡄⡤⠊⠁⣀⠤⠔⠒⠒⠤⣄⡀⠙⢯⡢⡀⠀⠀⠀⠀⠀⢀⣀⡀⠀⠀⣴⡋⠙⡆⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠉⡗⠚⠈⢈⡣⠀⠀⢸⠃⠀⡜⠁⠀⠀⠀⠀⠀⣀⡀⠀⠀⢱⡀⠙⠀⣠⠎⠁⠀⠀⠀⠀⠀⠀⠙⢦⡀⠱⡘⢆⠀⠀⠀⢠⡏⠠⠾⠤⠴⣧⣉⡼⣁⣀⡀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠳⢶⠚⠉⢇⠀⠀⢸⠀⢰⠃⠀⠀⠀⠀⣰⣛⡧⣍⠳⡀⠀⣇⠀⣰⠃⠀⢀⣠⠤⢤⡀⠀⠀⠀⠀⢳⠀⢷⠾⣆⠀⠀⠀⠙⢾⠀⠀⣰⠇⠙⢿⠧⣠⡇\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠘⡆⠀⠘⡄⠀⣾⠀⠘⡆⠀⠀⠀⠀⢳⡙⠶⠜⣠⠇⢀⡏⠀⣏⠀⠠⡿⢿⠓⣦⢹⠀⠀⠀⠀⢸⡆⢸⠀⣿⡄⠀⠀⢀⡼⢧⡀⠁⠀⣠⠗⠋⠁⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⢳⠀⠀⢽⡀⡟⣇⠀⠱⡄⠀⠀⠀⠀⠉⠒⠚⠁⢀⡞⠀⠀⢻⡀⠀⠳⣌⠉⣁⠞⠀⠀⠀⠀⣼⠀⣸⠉⡇⣿⠀⠀⣹⢤⣀⠈⢹⠋⠁⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠈⡇⠀⠀⢣⡇⠈⢦⡀⠈⠳⢤⣀⣀⣀⣀⡠⠔⠋⢀⡜⣆⠀⠳⣄⠀⠀⠉⠀⠀⠀⠀⢀⡼⠁⢠⣧⣼⠢⣿⠀⣰⠃⠀⢨⠏⠋⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡀⠀⢸⠀⠀⠀⠙⠢⣄⣀⠀⠀⠀⠀⣀⡠⠖⠋⠀⠈⢢⡀⠈⠑⠢⠤⠤⠤⠤⠚⠋⢀⡴⠃⠀⠀⠀⢻⣰⠃⠀⢠⠏⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣇⢠⢧⡀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠁⠀⠀⠀⠀⠀⠀⠈⠓⠤⢄⣀⣀⣀⡠⠤⠖⠉⠀⠀⠀⠀⠀⢸⠃⠀⢀⠎⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣸⡀⠙⣄⠀⠀⠀⢸⢭⣹⣒⠒⠠⢤⢄⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡼⡆⢀⡞⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠳⣄⠈⢣⡀⠀⠈⢧⡀⠀⠉⠉⠉⠙⠒⠒⠊⠙⠛⠭⠭⠛⠯⠭⢭⡟⠀⠀⠀⠀⠀⢀⣠⠖⠋⢀⡇⡼⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠘⢦⠀⠙⣄⠀⠀⠙⠦⣤⠤⠤⠤⠤⣀⣀⣀⡀⠀⢀⣀⣀⡴⠋⠀⠀⠀⠀⣀⠴⠋⠀⢀⡴⢺⣱⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⠀⠀⠈⢧⠀⠘⢦⡀⠀⠀⠈⠉⠒⠒⠢⠤⠤⠤⠤⠒⠒⠋⠁⠀⠀⠀⠀⣠⠞⠁⠀⣠⠞⠉⠀⢸⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⠀⠀⠈⣧⣾⣾⣯⠉⠉⠉⠉⠉⠉⠛⠛⠛⠒⠒⠒⠒⠒⠒⠢⠤⣤⣾⣧⡀⣠⠞⠁⠀⠀⠀⣸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⠀⠀⠀⠀⡏⢿⣿⠞⠀⠀⢠⢀⣀⣀⣀⣀⣀⣀⣀⣀⣀⡀⠀⠀⠸⣗⢿⡽⡷⠋⠀⠀⠀⠀⠀⢻⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⢧⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠃⠀⠀⠀⠈⠳⢾⠇⠀⠀⠀⠀⠀⠀⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢈⡆⠀⠀⠀⢸⠀⠀⠀⠀⠀⠘⡆⠀⠀⠀⠀⠀⠀⠀⠀⡼⠀⠀⠀⠀⠀⠀⣸⠀⠀⠀⠀⠀⠀⢀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣿⠉⠒⡾⠀⠀⠀⠀⠀⠀⠘⠦⠄⣀⣀⣀⡀⠤⠞⠁⠀⠀⠀⠀⠀⠀⢸⡶⠶⠶⠶⢶⣶⠞⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢧⢸⣀⡴⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢳⡀⠀⢀⡾⠛⣸⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢏⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠲⠾⠥⡼⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡴⠊⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠒⠦⠤⣀⣀⣀⡀⠀⠀⠀⢸⣸⡀⠀⠀⠀⠀⠀⢀⣀⣀⣠⠤⠒⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⡍⠉⠉⠉⠉⢹⠍⠉⠉⠉⠉⢉⡝⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠤⠟⠒⠒⠒⠒⠚⣷⠒⠒⠒⠒⢿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+    std::cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣅⣀⣀⣀⣀⣤⣤⣴⠷⣦⣤⣀⣀⣀⣸\n";
+    std::cout << "==================================================================\n\n";
 }
 
 
-void GameSession::handleJail(Player *currentPlayer){
+void GameSession::updateJailState(Player *currentPlayer){
 
     std::cout << currentPlayer->getUsername() << " di penjara! Silahkan ambil pilihan:\n1. Bayar M" << config->jailFine << "\n2. Lempar dadu\n3. Kartu Freedom\n";
     
@@ -345,6 +428,8 @@ void GameSession::handleJail(Player *currentPlayer){
         if(currentPlayer->canAfford(config->jailFine)){
             currentPlayer->deductMoney(config->jailFine);
             currentPlayer->setStatus(PlayerStatus::ACTIVE);
+            currentPlayer->setJailAttempts(0);
+            currentPlayer->resetConsecutiveDouble();
             std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil membayar denda dan sekarang bebas dari penjara!\n";
         }
         else{
@@ -356,9 +441,8 @@ void GameSession::handleJail(Player *currentPlayer){
         dices.roll();
         if (dices.isDouble()) {
             std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil mendapatkan dadu yang sama! Silahkan keluar dari penjara...\n";
+            currentPlayer->resetConsecutiveDouble();
             currentPlayer->setStatus(PlayerStatus::ACTIVE);
-            nextTurn(dices.getDie1(), dices.getDie2()); 
-            return;
         } 
         else{
             std::cout << "Pemain " << currentPlayer->getUsername() << " gagal mendapatkan dadu yang sama...\n";
@@ -366,114 +450,42 @@ void GameSession::handleJail(Player *currentPlayer){
         }
     }
     else {
-        for(Card *card : currentPlayer->getHand()){
+        std::vector<SkillCard*> hand = currentPlayer->getHand();
 
-            FreedomCard *freedomCard = dynamic_cast<FreedomCard*>(card);
-            if(freedomCard){
-                freedomCard->use(currentPlayer);
-                std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil bebas dari penjara setelah menggunakan kartu!\n";
+        int idx = -1;
+        for(int i = 0; i < hand.size(); i++){
+            if(dynamic_cast<FreedomCard*>(hand[i])){
+                idx = i;
+                break;
             }
-            else{
-                std::cout << "Pemain " << currentPlayer->getUsername() << " tidak memiliki kartu untuk bebas dari penjara!\n";
-                currentPlayer->incJailAttempts();
-            }
+        }
+
+        if(idx != -1){
+            hand[idx]->use(currentPlayer);
+
+            if(auto pos = hand[idx]->skillName.find(" ("); pos != std::string::npos) hand[idx]->skillName.erase(pos);
+            skillDeck.addCardToDiscarded(hand[idx]);
+
+            currentPlayer->removeCard(idx);
+            std::cout << "Pemain " << currentPlayer->getUsername() << " berhasil bebas dari penjara setelah menggunakan kartu!\n";
+        }
+        else{
+            std::cout << "Pemain " << currentPlayer->getUsername() << " tidak memiliki kartu untuk bebas dari penjara!\n";
+            currentPlayer->incJailAttempts();
         }
     }
 
-    if(currentPlayer->getJailAttempts() == 3){
+    if(currentPlayer->getStatus() == PlayerStatus::JAILED && currentPlayer->getJailAttempts() == 3){
         currentPlayer->setStatus(PlayerStatus::ACTIVE);
         std::cout << "Pemain " << currentPlayer->getUsername() << " telah menempuh hukuman 3 tahun penjara, silahkan keluar dari penjara!\n";
         currentPlayer->setJailAttempts(0);
+        currentPlayer->resetConsecutiveDouble();
     }
 
     currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
     if(currentPlayerIndex == 0) currentTurn++;
     beginCurrentPlayerTurn();
 }
-
-
-void GameSession::handleAuction(Property *property, Player *player){
-    vector<Player *> activePlayer;
-    for(Player *p: players) if(player->isActive()) activePlayer.push_back(p);
-
-    Auction auction(property, activePlayer, currentPlayerIndex, logger, currentTurn);
-    auction.run();
-}
-
-
-void GameSession::handleGadai(Player* player) {
-    std::vector<Property*> owned; std::vector<int> choices;
-    for (size_t i = 0; i < player->getAllProperties().size(); ++i) {
-        if (player->getAllProperties()[i]->getStatus() == PropertyStatus::OWNED) {
-            owned.push_back(player->getAllProperties()[i]);
-            choices.push_back(i + 1);
-            std::cout << i + 1 << ". " << owned.back()->getName() << "\n";
-        }
-    }
-    if (choices.empty()) { std::cout << "Tidak ada properti untuk digadaikan.\n"; return; }
-    int choice = player->chooseInput(choices);
-    Property* p = player->getAllProperties()[choice-1];
-    p->mortgage(); player->addMoney(p->getMortgageValue());
-    logger->log(currentTurn, player->getUsername(), "GADAI", p->getCode());
-}
-
-
-
-void GameSession::handleTebus(Player* player) {
-    std::vector<Property*> mortgaged; std::vector<int> choices;
-    for (size_t i = 0; i < player->getAllProperties().size(); ++i) {
-        if (player->getAllProperties()[i]->getStatus() == PropertyStatus::MORTGAGED) {
-            mortgaged.push_back(player->getAllProperties()[i]);
-            choices.push_back(i + 1);
-            std::cout << i + 1 << ". " << mortgaged.back()->getName() << "\n";
-        }
-    }
-    if (choices.empty()) { std::cout << "Tidak ada properti yang digadaikan.\n"; return; }
-    int choice = player->chooseInput(choices);
-    Property* p = player->getAllProperties()[choice-1];
-    if (player->canAfford(p->getPrice())) {
-        player->deductMoney(p->getPrice());
-        p->unmortgage();
-        logger->log(currentTurn, player->getUsername(), "TEBUS", p->getCode());
-    } else std::cout << "Uang tidak cukup.\n";
-}
-
-
-
-void GameSession::handleBangun(Player* player) {
-    std::vector<StreetProperty*> eligible; 
-    std::vector<int> choices;
-    for (size_t i = 0; i < player->getAllProperties().size(); ++i) {
-        if (auto* sp = dynamic_cast<StreetProperty*>(player->getAllProperties()[i])) {
-            if (sp->canBuild()) { eligible.push_back(sp); choices.push_back(i + 1); std::cout << i + 1 << ". " << sp->getName() << "\n"; }
-        }
-    }
-    if (choices.empty()) { std::cout << "Tidak ada properti untuk dibangun.\n"; return; }
-    int choice = player->chooseInput(choices);
-    StreetProperty* sp = eligible[choice-1];
-    
-    int cost = sp->getBuildCost();
-    if (player->getDiscount() > 0) {
-        cost = static_cast<int>(cost * (1.0f - player->getDiscount() / 100.0f));
-        std::cout << "Mendapatkan diskon " << player->getDiscount() << "%! Biaya bangun menjadi M" << cost << ".\n";
-    }
-
-    if (player->canAfford(cost)) {
-        player->deductMoney(cost);
-        sp->build();
-        logger->log(currentTurn, player->getUsername(), "BANGUN", sp->getCode());
-    } else std::cout << "Uang tidak cukup.\n";
-}
-
-
-
-void GameSession::handleBankruptcy(Player* debtor, Player* creditor, int amount) {
-    std::cout << debtor->getUsername() << " bangkrut!\n";
-    debtor->setStatus(PlayerStatus::BANKRUPT);
-    for (auto p : debtor->getAllProperties()) if (creditor) creditor->addProperty(p);
-}
-
-
 
 
 void GameSession::updateFestivalState() {
@@ -485,13 +497,18 @@ void GameSession::updateFestivalState() {
     }
 }
 
+
 void GameSession::useSkillCard(Player* player) {
     auto& hand = player->getHand();
-    if (hand.empty()) { std::cout << "Tidak ada kartu.\n"; return; }
+    if (hand.empty()) { std::cout << "Tidak ada kartu spesial yang dapat digunakan.\n"; return; }
+
     std::vector<int> choices;
     for (size_t i = 0; i < hand.size(); ++i) { choices.push_back(i + 1); std::cout << i+1 << ". " << hand[i]->skillName << "\n"; }
     int choice = player->chooseInput(choices);
+    
     hand[choice-1]->use(player);
+    if(auto pos = hand[choice-1]->skillName.find(" ("); pos != std::string::npos) hand[choice-1]->skillName.erase(pos);
+
     skillDeck.addCard(hand[choice-1]);
     player->removeCard(choice-1);
 }
@@ -499,15 +516,76 @@ void GameSession::useSkillCard(Player* player) {
 
 
 void GameSession::assignSkillCard() {
+    std::cout << "\n\n============= PEMBAGIAN KARTU SPESIAL =============\n\n";
     for (Player* p : players) {
-        if (p->isActive() && p->getCardCount() < 3) {
+        if (p->isActive()) {
             try {
-                SkillCard* card = skillDeck.draw(true);
-                std::cout << "Pemain " << p->getUsername() << " mendapatkan kartu spesial: " << card->skillName << '\n'; 
-                p->addCard(card);
-            } catch (const AppException& e) {
+
+                SkillCard* card = skillDeck.draw(true); 
+
+                if(auto s = dynamic_cast<MoveCard*>(card)){
+                    s->setDistance(std::rand() % 30 + 5);
+                }   
+
+                if(auto s = dynamic_cast<DiscountCard*>(card)){
+                    s->setDiscount(std::rand() % 80 + 10);
+                }
+
+                if(p->getCardCount() == 3){
+                    std::cout << "Pemain " << p->getUsername() << " akan mendapatkan kartu spesial: " << card->skillName << '\n'; 
+                    std::cout << "Tetapi pemain sudah memiliki 3 kartu spesial:\n";
+
+                    int idx = 1;
+                    for(SkillCard *card : p->getHand()){
+                        std::cout << idx << ".) " << card->skillName << '\n';
+                        idx++;
+                    }
+
+                    std::string in;
+                    std::cout << "Buang salah satu kartu yang telah dimiliki untuk mendapatkan kartu baru? (y/n): ";
+                    std::cin >> in;
+                    while(in != "y" && in != "Y" && in != "n" && in != "N"){
+                        std::cout << "Masukan tidak valid...\n";
+                        std::cout << "Buang salah satu kartu yang telah dimiliki untuk mendapatkan kartu baru? (y/n): ";
+                        std::cin >> in;
+                    }
+
+                    if(in == "y" || in == "Y"){
+                        int choice;
+                        std::cout << "Pilih nomor kartu untuk dibuang: ";
+                        std::cin >> choice;
+                        while(choice <= 0 || choice > p->getCardCount()){
+                            std::cout << "Masukan tidak valid...\n";
+                            std::cout << "Pilih nomor kartu untuk dibuang: ";
+                            std::cin >> choice;
+                        }
+
+                        SkillCard *discarded = p->removeCard(choice - 1);
+                        std::cout << "Kartu " << discarded->skillName << " berhasil dibuang, dan pemain mendapat kartu " << card->skillName << '\n';
+                        p->addCard(card);
+                    }
+                    else {
+                        std::cout << "Kartu " << card->skillName << " tidak diterima oleh pemain...\n";
+                        skillDeck.addCard(card);
+                    }
+                    
+                    std::cout << "\n\n";
+                }
+                else{
+                    std::cout << "Pemain " << p->getUsername() << " mendapatkan kartu spesial: " << card->skillName << '\n'; 
+                    p->addCard(card);
+                }
+
+            } 
+            catch (const AppException& e) {
                 std::cout << "Gagal membagikan kartu: " << e.what() << "\n";
             }
         }
     }
+}
+
+
+void GameSession::log(std::string action, std::string detail){
+    Player *currentPlayer = this->getCurrentPlayer();
+    logger->log(currentTurn, currentPlayer->getUsername(), action, detail);  
 }

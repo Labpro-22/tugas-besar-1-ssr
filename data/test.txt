@@ -1,17 +1,22 @@
-5 40
+3 50
 2
-Alice 1200 BGR ACTIVE
-1
-MoveCard 5
-Bob 800 PEN JAILED
-0
-Alice Bob
-Alice
+bbbb 300 FES ACTIVE
+3
+LassoCard
+DiscountCard 87
+DemolitionCard
+aaaa 40 PEN ACTIVE
+3
+MoveCard 31
+MoveCard 21
+DemolitionCard
+bbbb aaaa
+bbbb
 28
-GRT street Alice OWNED 1 0 2
-TSK street Bob MORTGAGED 1 0 0
-GBR railroad Alice OWNED 1 0 0
-BGR street Alice OWNED 1 0 0
+GRT street BANK BANK 1 0 0
+TSK street aaaa OWNED 1 0 0
+GBR railroad bbbb OWNED 1 0 0
+BGR street BANK BANK 1 0 0
 DPK street BANK BANK 1 0 0
 BKS street BANK BANK 1 0 0
 MGL street BANK BANK 1 0 0
@@ -25,7 +30,7 @@ SBY street BANK BANK 1 0 0
 MKS street BANK BANK 1 0 0
 BLP street BANK BANK 1 0 0
 MND street BANK BANK 1 0 0
-TUG railroad BANK BANK 1 0 0
+TUG railroad bbbb OWNED 1 0 0
 PLB street BANK BANK 1 0 0
 PKB street BANK BANK 1 0 0
 PAM utility BANK BANK 1 0 0
@@ -36,10 +41,26 @@ MTR street BANK BANK 1 0 0
 GUB railroad BANK BANK 1 0 0
 JKT street BANK BANK 1 0 0
 IKN street BANK BANK 1 0 0
-3
-TeleportCard
+9
+FreedomCard
+ShieldCard
 DiscountCard
 ShieldCard
-2
-1 Alice DADU Lempar: 3+3=6 mendarat di Bogor (BGR)
-2 Bob DADU Lempar: 1+2=3 mendarat di Penjara (PEN)
+DiscountCard
+TeleportCard
+FreedomCard
+TeleportCard
+LassoCard
+12
+1 bbbb LOAD Permainan baru berhasil dimuat
+1 bbbb BUY Pemain bbbb berhasil membeli properti tipe RAILROAD dengan nama STASIUN_GAMBIR [200]
+1 bbbb Lempar 1+4=1 mendarat di Stasiun Gambir
+1 aaaa BUY Pemain aaaa berhasil membeli lahan TASIKMALAYA [M60]
+2 aaaa Lempar 2+1=1 mendarat di Tasikmalaya
+2 bbbb FUND CARD Pemain bbbb mendapatkan kartu dana umum, pemain harus Mendapat Gratifikasi M200
+2 bbbb ACTION CARD Pemain dikirim ke penjara!
+2 bbbb Lempar 6+6=1 mendarat di Dana Umum
+2 bbbb BUY Pemain bbbb berhasil membeli properti tipe RAILROAD dengan nama STASIUN_TUGU [200]
+2 bbbb Lempar 4+4=1 mendarat di Stasiun Tugu
+2 bbbb Lempar 2+6=1 mendarat di Festival
+3 aaaa Lempar 3+4=1 mendarat di Penjara

@@ -85,8 +85,6 @@ public:
     StreetProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color, int housePrice, int hotelPrice, vector<int> rentLevels);
     ~StreetProperty();
 
-    int mortgage() override;
-
     int calculateRent(int diceNum, int ownedCountOfType, bool isMono) override;
     int sellBuilding();
     int getBuildCost() const;

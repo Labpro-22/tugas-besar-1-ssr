@@ -27,12 +27,14 @@ void CardTile::onLanded(Player* player) {
     if(actionType == FUND){
         ActionCard *c = game->drawFundCard(false);
         std::cout << "Pemain " << player->getUsername() << " mendapatkan kartu dana umum, pemain harus " << c->actionName << '\n';
+        game->log("FUND CARD", "Pemain " + player->getUsername() +" mendapatkan kartu dana umum, pemain harus " + c->actionName);
         c->execute(player);
         game->getFundDeck().shuffle();
     }
     else {
         ActionCard *c = game->drawOppoturnityCard(false);
         std::cout << "Pemain " << player->getUsername() << " mendapatkan kartu kesempatan, pemain harus " << c->actionName << '\n';
+        game->log("OPPOTURNITY CARD", "Pemain " + player->getUsername() +" mendapatkan kartu kesempatan, pemain harus " + c->actionName);
         c->execute(player);
         game->getOppoturnityDeck().shuffle();
     }

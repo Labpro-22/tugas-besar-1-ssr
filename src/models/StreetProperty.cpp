@@ -17,21 +17,17 @@ StreetProperty::~StreetProperty() {}
 
 int StreetProperty::calculateRent(int diceNum, int ownedCountOfType, bool isMono) {
     int baseRent = rentLevels[0];
-    if (buildingCount == 0) {
+    if(buildingCount == 0){
         baseRent = rentLevels[0];
-        if (isMono) {
+        if(isMono){
             baseRent *= 2;
         }
-    } else if (buildingCount <= 5) {
+    } 
+    else if(buildingCount <= 5){
         baseRent = rentLevels[buildingCount];
     }
  
     return baseRent * festivalMultiplier;
-}
-
-int StreetProperty::mortgage(){
-    status = PropertyStatus::MORTGAGED;
-    return 0;
 }
  
 bool StreetProperty::canBuild() const {

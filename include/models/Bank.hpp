@@ -11,11 +11,17 @@ using namespace std;
 
 class Bank {
 private:
+    class LiquidationAction {
+    public:
+        int type; 
+        Property* prop;
+        int value;
+    };
+
     int goSalary;
     int jailFine;
     std::map<int, int> utilityMultiplierTable;
     std::map<int, int> railroadRentTable;
-    TransactionLogger* logger;
 
     void logTransaction(int turn, const string& username,
                         const string& action,
@@ -25,8 +31,7 @@ public:
     Bank(int goSalary,
            int jailFine,
            std::map<int, int> railroadRentTable,
-           std::map<int, int> utilityMultiplierTable,
-           TransactionLogger* logger);
+           std::map<int, int> utilityMultiplierTable);
 
     ~Bank() = default;
     void buyStreet(Player* buyer, StreetProperty* property, int turn);
@@ -67,4 +72,12 @@ public:
     // ----------------------------------------------------------------
     int getGoSalary()  const;
     int getJailFine()  const;
+
+
+    // MAIN COMMAND
+    void handleBankruptcy(Player* debtor, Player* creditor, int amount);
+    void handleBuild(Player* player);
+    void handleUnmortgage(Player* player);
+    void handleMortgage(Player* player);
+    void handleAuction(Property *property, Player *player);
 };

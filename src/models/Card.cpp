@@ -12,6 +12,7 @@ ActionCard::ActionCard(std::string id, std::string type, std::string name) : Car
 
 void ActionCard::execute(Player *player) {
     std::cout << "Menjalankan Kartu Aksi: " << actionName << "\n";
+    GameApp::currentSession->log("ACTION CARD", "Menajalankan Kartu Aksi: " + actionName);
 }
 
 
@@ -21,6 +22,7 @@ void GoToStationCard::execute(Player *player) {
     int stationIdx = game->getBoard()->findNearestStation(player->getPosition());
     player->setPosition(stationIdx);
     std::cout << "Pemain dipindahkan ke stasiun terdekat.\n";
+    GameApp::currentSession->log("ACTION CARD", "Pemain dipindahkan ke stasiun terdekat.");
 }
 
 
@@ -29,6 +31,7 @@ void MoveBackCard::execute(Player *player) {
     GameSession *game = GameApp::currentSession; 
     player->moveForward(game->getBoard(), -step);
     std::cout << "Pemain mundur " << step << " petak.\n";
+    GameApp::currentSession->log("ACTION CARD", "Pemain mundur sebanyak " + std::to_string(step) + " petak.");
 }
 
 
@@ -38,6 +41,8 @@ void GoToJailCard::execute(Player *player) {
     player->setPosition(game->getBoard()->getJailIndex());
     player->setStatus(PlayerStatus::JAILED);
     std::cout << "Pemain dikirim ke penjara!\n";
+
+    GameApp::currentSession->log("ACTION CARD", "Pemain dikirim ke penjara!");
 }
 
 
@@ -45,25 +50,28 @@ GratificationCard::GratificationCard(std::string id, int amount) : ActionCard(id
 void GratificationCard::execute(Player *player) {
     player->addMoney(amount);
     std::cout << "Pemain mendapatkan M" << amount << ".\n";
+    
+    GameApp::currentSession->log("ACTION CARD", "Pemain dikirim ke penjara!");
 }
 
 
 BirthdayGiftCard::BirthdayGiftCard(std::string id, int amount) : ActionCard(id, "ACTION", "Mendapat Hadiah Ulang Tahun M" + std::to_string(amount)), amount(amount) {}
 void BirthdayGiftCard::execute(Player *player) {
     GameSession *game = GameApp::currentSession; 
-    for (Player* p : game->getPlayers()) {
-        if (p != player && p->isActive()) {
-            if(p->canAfford(amount)){
-                p->deductMoney(amount);
+    for (Player* other : game->getPlayers()) {
+        if (other != player && other->isActive()) {
+            if(other->canAfford(amount)){
+                other->deductMoney(amount);
                 player->addMoney(amount);
             }
             else {
-                player->addMoney(p->getMoney());
-                p->deductMoney(p->getMoney());
+                game->getBank()->handleBankruptcy(other, player, amount);
             }
         }
     }
-    std::cout << "Pemain mendapatkan M" << amount << " dari setiap pemain lain.\n";
+    std::cout << "Pemain mendapatkan M" << amount << " dari setiap pemain lain. Dalam rangka hadiah ulang tahun, selamat ulang tahun :)\n";
+
+    GameApp::currentSession->log("ACTION CARD", "Pemain mendapatkan M" + std::to_string(amount) + " dari setiap pemain lain, dalam rangka hadiah ulang tahun.");
 }
 
 
@@ -74,8 +82,9 @@ void DoctorFeeCard::execute(Player *player) {
     if (player->canAfford(amount)) {
         player->deductMoney(amount);
         std::cout << "Pemain membayar biaya dokter M" << amount << ".\n";
+        GameApp::currentSession->log("ACTION CARD", "Pemain membayar biaya dokter sebesar M" + std::to_string(amount));
     } else {
-        game->handleBankruptcy(player, nullptr, amount);
+        game->getBank()->handleBankruptcy(player, nullptr, amount);
     }
 }
 
@@ -89,20 +98,23 @@ void SkillCard::execute(Player *player) {
 MoveCard::MoveCard(std::string id) : SkillCard(id, "MoveCard") {}
 void MoveCard::use(Player *player) {
     GameSession *game = GameApp::currentSession; 
-    this->distance = (std::rand() % 25) + 1;
+
     std::cout << "MoveCard digunakan: Maju " << distance << " petak.\n";
     player->moveForward(game->getBoard(), distance);
     Tile *tile = game->getBoard()->getTile(player->getPosition());
+
     std::cout << "Pemain mendarat di " << tile->getName() << " (" << tile->code << ")\n";
+    GameApp::currentSession->log("SKILL CARD", "Pemain menggunakan MoveCard dan mendarat di " + tile->getName());
     tile->onLanded(player);
 }
 
 
 DiscountCard::DiscountCard(std::string id, int duration) : SkillCard(id, "DiscountCard"), duration(duration) {}
 void DiscountCard::use(Player *player) {
-    discount = (std::rand() % 100);
     std::cout << "DiscountCard digunakan: Diskon " << discount << "% selama " << duration << " giliran.\n";
-    player->setDiscount(discount / 100);
+    player->setDiscount(static_cast<float>(discount) / 100);
+
+    GameApp::currentSession->log("SKILL CARD", "Pemain menggunakan DiscountCard dan mendapatkan diskon " + std::to_string(discount) +  "% selama " + std::to_string(duration) + " giliran");
 }
 
 
@@ -110,6 +122,7 @@ ShieldCard::ShieldCard(std::string id, int duration) : SkillCard(id, "ShieldCard
 void ShieldCard::use(Player *player) {
     std::cout << "ShieldCard digunakan: Kebal selama " << duration << " giliran.\n";
     player->setShield(true);
+    GameApp::currentSession->log("SKILL CARD", "Pemain menggunakan ShieldCard dan mendapatkan kekebalan selama " + std::to_string(duration) + " giliran.");
 }
 
 
@@ -118,16 +131,25 @@ void TeleportCard::use(Player *player) {
 
     GameSession *game = GameApp::currentSession; 
 
-    std::cout << "TeleportCard digunakan: Pilih kode petak tujuan: ";
     std::string code;
+    std::cout << "Pilih kode petak tujuan: ";
     std::cin >> code;
-    try {
-        Tile* tile = game->getBoard()->getTileByCode(code);
-        player->setPosition(tile->index);
-        std::cout << "Berhasil teleport ke " << tile->name << ".\n";
-        tile->onLanded(player);
-    } catch (AppException &) {
-        std::cout << "Kode petak tidak valid.\n";
+    while(true){
+        try {
+            Tile* tile = game->getBoard()->getTileByCode(code);
+            player->setPosition(tile->index);
+            
+            std::cout << "Berhasil teleport ke " << tile->name << ".\n";
+            GameApp::currentSession->log("SKILL CARD", "Pemain menggunakan TeleportCard dan berhasil berpindah ke " + tile->getName());
+            
+            tile->onLanded(player);
+            break;
+        } 
+        catch (AppException &) {
+            std::cout << "Kode petak tidak valid...\n";
+            std::cout << "Pilih kode petak tujuan: ";
+            std::cin >> code;
+        }
     }
 }
 
@@ -142,6 +164,7 @@ void LassoCard::use(Player *player) {
         if (p != player && p->isActive()) {
             p->setPosition(player->getPosition());
             std::cout << p->getUsername() << " ditarik ke petak Anda.\n";
+            GameApp::currentSession->log("SKILL CARD", "Pemain menggunakan LassoCard dan berhasil menarik pemain " + p->getUsername());
         }
     }
 }
@@ -152,11 +175,7 @@ void DemolitionCard::use(Player *player) {
     GameSession *game = GameApp::currentSession;
     std::cout << "DemolitionCard digunakan: Hancurkan properti lawan.\n";
 
-    struct Target {
-        Player* owner;
-        Property* prop;
-    };
-    std::vector<Target> targets;
+    std::vector<DemolitionTarget> targets;
 
     for (Player* p : game->getPlayers()) {
         if (p != player && p->isActive()) {
@@ -176,40 +195,39 @@ void DemolitionCard::use(Player *player) {
         std::cout << i + 1 << ". " << targets[i].owner->getUsername() << " - [" << targets[i].prop->getCode() << "] " << targets[i].prop->getName() << "\n";
     }
 
-    std::cout << "Pilih nomor properti yang ingin dihancurkan: ";
     int choice;
-    if (!(std::cin >> choice)) {
-        std::cin.clear();
-        std::cin.ignore(1000, '\n');
-        std::cout << "Input tidak valid.\n";
-        return;
+    std::cout << "Pilih nomor properti yang ingin dihancurkan: ";
+    std::cin >> choice;
+    while(choice <= 0 || choice > targets.size()) {
+        std::cout << "Masukan tidak valid...\n";
+        std::cout << "Pilih nomor properti yang ingin dihancurkan: ";
+        std::cin >> choice;
     }
 
-    if (choice > 0 && choice <= static_cast<int>(targets.size())) {
-        Target t = targets[choice - 1];
-        Property* p = t.prop;
-        Player* owner = t.owner;
 
-        // Reset property
-        p->setOwnerID(-1);
-        p->setStatus(PropertyStatus::BANK);
-        if (StreetProperty* sp = dynamic_cast<StreetProperty*>(p)) {
-            sp->buildingCount = 0;
-        }
+    DemolitionTarget t = targets[choice - 1];
+    Property* p = t.prop;
+    Player* owner = t.owner;
 
-        // Remove from owner
-        owner->removeProperty(p);
-
-        std::cout << "Properti " << p->getName() << " milik " << owner->getUsername() << " telah dihancurkan!\n";
-    } else {
-        std::cout << "Pilihan tidak valid.\n";
+    p->setOwnerID(-1);
+    p->setStatus(PropertyStatus::BANK);
+    if (StreetProperty* sp = dynamic_cast<StreetProperty*>(p)) {
+        sp->buildingCount = 0;
     }
+
+    owner->removeProperty(p);
+
+    std::cout << "Properti " << p->getName() << " milik " << owner->getUsername() << " telah dihancurkan!\n";
+    GameApp::currentSession->log("SKILL CARD", "Pemain menggunakan DemolitionCard dan berhasil menghancurkan properti milik " + owner->getUsername() + "(" + p->getName() + ")");
+
 }
 
 
 FreedomCard::FreedomCard(std::string id) : SkillCard(id, "FreedomCard") {}
 void FreedomCard::use(Player *player) {
     std::cout << "FreedomCard digunakan: Keluar dari penjara gratis.\n";
+    GameApp::currentSession->log("SKILL CARD", "Pemain menggunakan FreedomCard dan berhasil keluar dari penjara");
     player->setStatus(PlayerStatus::ACTIVE);
     player->setJailAttempts(0);
+    player->resetConsecutiveDouble();
 }

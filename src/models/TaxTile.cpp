@@ -39,48 +39,64 @@ void TaxTile::onLanded(Player* player) {
     }
 
     if (taxType == TAX_PBM) {
+        std::cout << "Pemain " << player->getUsername() << " harus membayar pajak " << (taxType == TAX_PPH ? "PPH" : "PBM") << " sebesar " << std::to_string(flatAmount) << '\n';
         if (!player->canAfford(flatAmount)) {
+            std::cout << "Pemain tidak dapat membayar pajak tersebut...\n";
             if (game == nullptr) {
                 throw GameException("TaxTile", "Game cannot be null when PBM triggers bankruptcy flow.");
             }
-            game->handleBankruptcy(player, nullptr, flatAmount);
+            game->getBank()->handleBankruptcy(player, nullptr, flatAmount);
             return;
         }
         player->deductMoney(flatAmount);
+        std::cout << "Pemain berhasil membayar pajak!\n";
+        game->log("TAX", "Pemain " + player->getUsername() + " membayar pajak " + (taxType == TAX_PPH ? "PPH" : "PBM") + " sebesar " + std::to_string(flatAmount));
         return;
     }
 
     std::cout << "Pilih metode pembayaran pajak:\n";
     std::cout << "1. Bayar nominal tetap (M" << flatAmount << ")\n";
-    std::cout << "2. Bayar persentase kekayaan (" << (int)(percentage * 100) << "%)\n";
+    std::cout << "2. Bayar persentase kekayaan (" << percentage << "%)\n";
     const int choice = player->chooseInput({1, 2});
     if (choice != 1 && choice != 2) {
         throw PlayerActionException(player, "Invalid tax payment choice.");
     }
 
     if (choice == 1) {
+        std::cout << "Pemain " + player->getUsername() + " harus membayar pajak " << (taxType == TAX_PPH ? "PPH" : "PBM") << " sebesar " << std::to_string(flatAmount) << '\n';
+        
         if (!player->canAfford(flatAmount)) {
+            std::cout << "Pemain tidak dapat membayar pajak tersebut...\n";
             if (game == nullptr) {
                 throw GameException("TaxTile", "Game cannot be null when flat PPH triggers bankruptcy flow.");
             }
-            game->handleBankruptcy(player, nullptr, flatAmount);
+            game->getBank()->handleBankruptcy(player, nullptr, flatAmount);
             return;
         }
         player->deductMoney(flatAmount);
+        std::cout << "Pemain berhasil membayar pajak!\n";
         return;
     }
 
     const int totalWealth = player->getTotalWealth();
-    const int taxAmount = static_cast<int>((percentage * static_cast<float>(totalWealth)) + 0.5F);
+    const int taxAmount = static_cast<int>((percentage / 100 * static_cast<float>(totalWealth)) + 0.5F);
+
+    std::cout << "Pemain " + player->getUsername() + " harus membayar pajak " << (taxType == TAX_PPH ? "PPH" : "PBM") << " sebesar " << std::to_string(taxAmount) << '\n';
 
     if (!player->canAfford(taxAmount)) {
+        std::cout << "Pemain tidak dapat membayar pajak tersebut...\n";
+
         if (game == nullptr) {
             throw GameException("TaxTile", "Game cannot be null when percentage PPH triggers bankruptcy flow.");
         }
-        game->handleBankruptcy(player, nullptr, taxAmount);
+        game->getBank()->handleBankruptcy(player, nullptr, taxAmount);
         return;
     }
+
+    game->log("TAX", "Pemain " + player->getUsername() + " membayar pajak " + (taxType == TAX_PPH ? "PPH" : "PBM") + " sebesar " + std::to_string(taxAmount));
     player->deductMoney(taxAmount);
+    std::cout << "Pemain berhasil membayar pajak!\n";
+
 }
 
 
@@ -91,7 +107,7 @@ void TaxTile::onPassed(Player* player) {
     
     GameSession *game = GameApp::currentSession;
     game->getBoard()->printBoard();
-    std::cout << "Pemain " << player->getUsername() << " melewati petak " << this->getName() << '\n';
+    std::cout << "Pemain " << player->getUsername() << " melewati petak " << this->getName() + "\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(750));
 }
 

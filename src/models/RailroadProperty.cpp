@@ -12,7 +12,6 @@ RailroadProperty::~RailroadProperty() {}
  
 int RailroadProperty::calculateRent(int diceNum, int ownedCount, bool isMono) {
     (void) isMono;
-    (void) ownedCount;
 
     GameSession *game = GameApp::currentSession;
     auto &rentTable = game->getConfig()->railroadRentTable;

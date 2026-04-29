@@ -7,6 +7,7 @@
 #include "Board.hpp"
 #include "Dice.hpp"
 #include "Card.hpp"
+#include "Bank.hpp"
 
 class Player;
 class Property;
@@ -24,6 +25,8 @@ private:
     GameConfig *config;
     bool isRunning;
     bool hasCurrentPlayerActed;
+
+    Bank *bank;
 
     CardDeck<ActionCard> fundDeck;
     CardDeck<ActionCard> oppoturnityDeck;
@@ -47,13 +50,18 @@ public:
 
     Board *getBoard(){ return config->board; }
     GameConfig *getConfig(){ return config; }
+    Bank *getBank(){ return bank; }
     TransactionLogger *getLogger(){ return logger; }
     CardDeck<ActionCard> &getFundDeck(){ return fundDeck; }
     CardDeck<ActionCard> &getOppoturnityDeck(){ return oppoturnityDeck; }
     CardDeck<SkillCard> &getSkillDeck(){ return skillDeck; }
+
     std::vector<Player*> &getPlayers(){ return players; }
+    void setPlayers(std::vector<Player*> &p){ players = p; }
+
     Player* getCurrentPlayer();
     int getCurrentTurn() const { return currentTurn; }
+    int getCurrentPlayerIndex() const { return currentPlayerIndex; }
     int getMaxTurn() const { return maxTurn; }
     bool canSaveAtTurnStart() const { return !hasCurrentPlayerActed; }
 
@@ -67,15 +75,7 @@ public:
     int getLastDiceTotal(){ return dices.getTotal(); }
     bool checkWinCondition();
 
-    void handleJail(Player *currentPlayer);
-    
-    void handleBankruptcy(Player* debtor, Player* creditor, int amount);
-    void handleAuction(Property* property, Player* triggeredBy);
-    
-    void handleGadai(Player* player);
-    void handleTebus(Player* player);
-    void handleBangun(Player* player);
-
+    void updateJailState(Player *currentPlayer);
     void updateFestivalState();
     void useSkillCard(Player* player);
     void assignSkillCard();
@@ -88,7 +88,8 @@ public:
     ActionCard* drawOppoturnityCard(bool removeCard) { return oppoturnityDeck.draw(removeCard); }
     SkillCard* drawSkillCard(bool removeCard) { return skillDeck.draw(removeCard); }
 
-    void distributeSalary(Player* player);
+    void log(std::string action, std::string detail);
+
     void removePlayer(Player* player);
     void endGame();
 };

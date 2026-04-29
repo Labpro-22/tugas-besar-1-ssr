@@ -11,7 +11,7 @@
 
 FestivalTile::FestivalTile() : Tile(), multiplier(1), duration(0) {}
 
-FestivalTile::FestivalTile(int index, const std::string& code, const std::string& name, const std::string& category, int multiplier, int duraiton)
+FestivalTile::FestivalTile(int index, const std::string& code, const std::string& name, const std::string& category, int multiplier, int duration)
     : Tile(index, code, name, category), multiplier(multiplier), duration(duration) {}
 
 void FestivalTile::onLanded(Player* player) {
@@ -38,6 +38,7 @@ void FestivalTile::onLanded(Player* player) {
     }
 
     if (eligibleProperties.empty()) {
+        std::cout << "Tetapi pemain belum memiliki properti yang bisa dikembangkan dengan bonus festival...\n";
         return;
     }
 
@@ -54,6 +55,8 @@ void FestivalTile::onLanded(Player* player) {
         throw PlayerActionException(player, "Invalid festival property choice.");
     }
 
+    std::cout << "Efek festival akan diterapkan pada properti " << eligibleProperties[choice - 1]->getName() << '\n';
+    game->log("FESTIVAL", "Efek festival dicoba diterapkan pada properti " + eligibleProperties[choice - 1]->getName());
     eligibleProperties[choice - 1]->applyFestival(multiplier, duration);
 }
 

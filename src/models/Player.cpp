@@ -194,3 +194,13 @@ BotPlayer::BotPlayer(std::string username, int playerIndex, int initialMoney) : 
 BotPlayer::~BotPlayer() {}
 
 int BotPlayer::chooseInput(std::vector<int> choices) { return choices.empty() ? -1 : choices[0]; }
+
+int Player::getMaxLiquidationValue() {
+    int potential = money;
+    for (auto p : properties) {
+        if (p->getStatus() == PropertyStatus::OWNED) {
+            potential += p->getSellValue();
+        }
+    }
+    return potential;
+}

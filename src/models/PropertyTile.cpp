@@ -38,6 +38,7 @@ void PropertyTile::onLanded(Player* player) {
             property->setOwnerID(player->getPlayerIndex());
             property->setStatus(PropertyStatus::OWNED);
             player->addProperty(property);
+            game->log("BUY", "Pemain " + player->getUsername() + " berhasil membeli properti tipe " + property->getType() + " dengan nama " + property->getName() + " [" + std::to_string(property->getPrice()) + "]");
             return;
         }
 
@@ -47,21 +48,32 @@ void PropertyTile::onLanded(Player* player) {
 
         std::cout << "Pilih aksi untuk petak properti:\n";
         std::cout << "1. Beli properti (M" << property->getPrice() << ")\n";
-        std::cout << "2. Lelang properti\n";
+        std::cout << "2. Tidak membeli properti (lelang akan dilakukan)\n";
         const int choice = player->chooseInput({1, 2});
         if (choice != 1 && choice != 2) {
             throw PlayerActionException(player, "Invalid property landing choice.");
         }
 
-        if (choice == 1 && player->canAfford(property->getPrice())) {
+        if (choice == 1) {
+
+            if(!player->canAfford(property->getPrice())){
+                std::cout << "Uang tidak cukup untuk membeli properti ini...\n";
+                game->getBank()->handleAuction(property, player);
+                return;
+            }
+
             player->deductMoney(property->getPrice());
             property->setOwnerID(player->getPlayerIndex());
             property->setStatus(PropertyStatus::OWNED);
             player->addProperty(property);
-            return;
+
+            std::cout << "Pemain " + player->getUsername() << " berhasil membeli lahan " << property->getName() << " [M" << std::to_string(property->getPrice()) << "]\n";
+            game->log("BUY", "Pemain " + player->getUsername() + " berhasil membeli lahan " + property->getName() + " [M" + std::to_string(property->getPrice()) + "]");
+        }
+        else {
+            game->getBank()->handleAuction(property, player);
         }
 
-        game->handleAuction(property, player);
         return;
     }
 
@@ -104,18 +116,24 @@ void PropertyTile::onLanded(Player* player) {
         throw GameException("PropertyTile", "Unsupported property type: " + property->getType());
     }
 
+    std::cout << "Pemain " << player->getUsername() << " harus membayar biaya sewa M" << rent << ".\n";
+
     if (player->getShield()) {
         std::cout << "Pemain " << player->getUsername() << " terlindungi oleh ShieldCard! Bebas biaya sewa M" << rent << ".\n";
         return;
     }
 
     if (!player->canAfford(rent)) {
-        game->handleBankruptcy(player, owner, rent);
+        std::cout << "Pemain tidak dapat membayar harga sewa tersebut...\n";
+        game->getBank()->handleBankruptcy(player, owner, rent);
         return;
     }
 
     player->deductMoney(rent);
     owner->addMoney(rent);
+
+    std::cout << "Pemain berhasil memenuhi biaya sewa.\n";
+    game->log("RENT", "Pemain " + player->getUsername() + " membayar biaya sewa M" + std::to_string(rent));
 }
 
 void PropertyTile::onPassed(Player* player) {

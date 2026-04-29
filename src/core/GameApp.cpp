@@ -94,7 +94,7 @@ void GameApp::start() {
         }
         if(std::cin.eof()) break;
 
-        GameSession *game;
+        GameSession *game = nullptr;
         bool loadFromSave = (in == "y" || in == "Y");
         while(true){
             try {
@@ -128,6 +128,7 @@ void GameApp::start() {
             std::cout <<  "====================================\n\n";
 
             currentSession = nullptr;
+            delete game;
         }
         catch(AppException &e){
             std::cout << "Terjadi kesalahan saat permainan berlangsung. \n";
@@ -148,4 +149,5 @@ void GameApp::start() {
     }
 
     printEndArt();
-}   
+    delete gameConfig;
+}

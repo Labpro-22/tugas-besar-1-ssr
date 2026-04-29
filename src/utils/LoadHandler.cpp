@@ -122,7 +122,7 @@ GameConfig *LoadHandler::loadConfiguration(std::string &configDir) {
                 checkCount++;
                 rents.push_back(rent);
             }
-            if(checkCount < 6) throw ResourceException("Invalid line '" + line + "' at file " + configPath + "property.txt");
+            if(checkCount != 6) throw ResourceException("Invalid line '" + line + "' at file " + configPath + "property.txt");
 
             property = new StreetProperty(id, kode, nama, price, mortgage, config->colorMap[warna], upg_r, upg_h, rents);
         } 
@@ -244,16 +244,13 @@ void LoadHandler::loadSave(std::string &saveDir, GameSession* game) {
                 card = mc;
             } 
             else if (cardType == "DiscountCard") {
-                float disc; int dur;
+                float disc;
                 DiscountCard* dc = new DiscountCard("Disc_" + username + "_" + std::to_string(j), 1);
-                if (iss >> disc >> dur) { dc->discount = disc; dc->duration = dur; }
+                if (iss >> disc) { dc->setDiscount(disc); }
                 card = dc;
             } 
             else if (cardType == "ShieldCard") {
-                int dur;
-                ShieldCard* sc = new ShieldCard("Shield_" + username + "_" + std::to_string(j), 1);
-                if (iss >> dur) sc->duration = dur;
-                card = sc;
+                card = new ShieldCard("Shield_" + username + "_" + std::to_string(j), 1);
             } 
             else if (cardType == "TeleportCard") {
                 card = new TeleportCard("Tele_" + username + "_" + std::to_string(j));
@@ -286,7 +283,7 @@ void LoadHandler::loadSave(std::string &saveDir, GameSession* game) {
         orderedPlayers.push_back(playerMap[uname]);
         orderedPlayers.back()->setPlayerIndex(i); // Update index according to new order
     }
-    game->getPlayers() = orderedPlayers;
+    game->setPlayers(orderedPlayers);
 
     // 5. GILIRAN_AKTIF_SAAT_INI
     std::string activeUname;

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "Player.hpp"
 
@@ -104,6 +105,11 @@ public:
     int distance;
 
     MoveCard(std::string id);
+    void setDistance(int dist){ 
+        distance = dist; 
+        if(auto pos = skillName.find(" ("); pos != std::string::npos) skillName.erase(pos);
+        skillName += " (jarak " + std::to_string(distance) + " petak)";
+    }
     void use(Player *player) override;
 };
 
@@ -111,10 +117,15 @@ public:
 
 class DiscountCard : public SkillCard {
 public:
-    float discount;
+    int discount;
     int duration;
 
     DiscountCard(std::string id, int duration);
+    void setDiscount(int disc){ 
+        discount = disc;  
+        if(auto pos = skillName.find(" ("); pos != std::string::npos) skillName.erase(pos);
+        skillName += " (" + std::to_string(discount) + "% potongan harga)";
+    }
     void use(Player *player) override;
 };
 
@@ -147,6 +158,12 @@ public:
 
 
 class DemolitionCard : public SkillCard {
+private:
+    struct DemolitionTarget {
+        Player* owner;
+        Property* prop;
+    };
+
 public:
     DemolitionCard(std::string id);
     void use(Player *player) override;
@@ -178,7 +195,9 @@ public:
     int size() const;
     bool isEmpty() const;
     void addCard(T* card);
-
+    void addCardToDiscarded(T* card);
+    std::vector<T*> getActivePileCards() const { return activePile; }
+    std::map<std::string, int> getCardCounts() const;
 };
 
 #include "Card.tpp"

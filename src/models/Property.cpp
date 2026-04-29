@@ -1,5 +1,7 @@
 #include "Property.hpp"
 #include "AppException.hpp"
+#include "GameApp.hpp"
+#include "GameSession.hpp"
 
 #include <stdexcept>
 #include <iomanip>
@@ -13,7 +15,7 @@ int Property::mortgage(){
         throw GameException("Property::mortgage", "Properti " + code + " tidak dapat digadaikan (status bukan OWNED).");
     }
     status = PropertyStatus::MORTGAGED;
-    return 0;
+    return mortgageValue;
 }
 
 int Property::unmortgage(){
@@ -32,16 +34,24 @@ int Property::getSellValue() const{
 }
 
 void Property::applyFestival(int multiplier, int duration) {
+
+    GameSession *game = GameApp::currentSession;
+
     int maxMultiplier = 1;
     for(int i = 0; i < duration; i++) maxMultiplier *= multiplier;
 
     if (festivalMultiplier < maxMultiplier) {
         festivalMultiplier *= multiplier;
+        cout << "Efek festival memberikan bonus " << festivalMultiplier << " kali lipat pada properti tersebut.\n"; 
+        game->log("FESTIVAL", "Efek festival berhasil diterapkan dengan x" + std::to_string(festivalMultiplier) + " kali lipat penggandaan");
     }
     else{
         cout << "Efek sudah maksimum (harga sewa sudah digandakan sebanyak " << duration << " kali)\n";
+        game->log("FESTIVAL", "Efek festival gagal diterapkan karena properti terkait sudah memiliki x" + std::to_string(festivalMultiplier) + " kali lipat penggandaan");
     }
+
     festivalDuration = duration;
+    cout << "Durasi efek festival berubah menjadi bersisa " << festivalDuration << " giliran.\n"; 
 }
  
 void Property::decrementFestival() {
