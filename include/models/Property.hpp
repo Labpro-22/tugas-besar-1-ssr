@@ -4,9 +4,10 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <raylib-cpp.hpp>
 #include "Dice.hpp"
 #include "Player.hpp"
+
+#include "Color.hpp"
 
 using namespace std;
 enum class PropertyStatus {
@@ -30,14 +31,14 @@ protected:
     int price;
     int mortgageValue;
     int ownerID;
-    raylib::Color colorGroup;
+    Color colorGroup;
     PropertyStatus status;
     int festivalMultiplier;
     int festivalDuration;
     
 public:
-    Property(int ID, string code, string name, string type, int price, int mortgageValue, raylib::Color color, int festivalMultiplier, int festivalDuration);
-    Property(int ID, string code, string name, string type, int price, int mortgageValue, raylib::Color color);
+    Property(int ID, string code, string name, string type, int price, int mortgageValue, Color color, int festivalMultiplier, int festivalDuration);
+    Property(int ID, string code, string name, string type, int price, int mortgageValue, Color color);
     Property(int ID, string code, string name, string type, int price, int mortgageValue);
 
     virtual ~Property() = default;
@@ -73,7 +74,7 @@ public:
     PropertyStatus getStatus() const { return status; }
     int getFestivalMultiplier() const { return festivalMultiplier;  }
     int getFestivalDuration() const { return festivalDuration; }
-    raylib::Color getColorGroup() { return colorGroup; }
+    Color getColorGroup() { return colorGroup; }
 
 
     /*=== Setters ===*/
@@ -98,7 +99,7 @@ public:
     vector<int> rentLevels;
     int buildingCount;
     
-    StreetProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color, int housePrice, int hotelPrice, vector<int> rentLevels);
+    StreetProperty(int ID, string code, string name, int price, int mortgageValue, Color color, int housePrice, int hotelPrice, vector<int> rentLevels);
     ~StreetProperty();
 
     PropertyType getPropertyType() const override { return PropertyType::STREET; }
@@ -120,7 +121,7 @@ public:
 
 class RailroadProperty : public Property {
 public:
-    RailroadProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color);
+    RailroadProperty(int ID, string code, string name, int price, int mortgageValue, Color color);
     RailroadProperty(int ID, string code, string name, int price, int mortgageValue);
     ~RailroadProperty();
 
@@ -133,7 +134,7 @@ public:
 
 class UtilityProperty : public Property {
 public:
-    UtilityProperty(int ID, string code, string name, int price, int mortgageValue, raylib::Color color);
+    UtilityProperty(int ID, string code, string name, int price, int mortgageValue, Color color);
     UtilityProperty(int ID, string code, string name, int price, int mortgageValue);
     ~UtilityProperty();
     

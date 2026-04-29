@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <raylib-cpp.hpp>
+
+#include "Color.hpp"
 
 class Tile;
 
@@ -20,7 +21,7 @@ public:
     int getTileCount();
     Tile  *getTile(int index);
     Tile *getTileByCode(std::string code);
-    std::vector<int> getTilesByColor(raylib::Color color);
+    std::vector<int> getTilesByColor(Color color);
     int getNextTileIndex(int current, int steps);
     int findNearestStation(int fromIndex);
     int getJailIndex();

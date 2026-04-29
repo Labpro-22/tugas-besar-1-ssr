@@ -120,7 +120,7 @@ void Board::setTile(Tile* tile, int idx) {
     tileMap[tile->code] = tile;
 }
 
-std::vector<int> Board::getTilesByColor(raylib::Color color) {
+std::vector<int> Board::getTilesByColor(Color color) {
     std::vector<int> result;
     for (Tile* tile : tiles) {
         if (!tile) continue;
@@ -130,7 +130,7 @@ std::vector<int> Board::getTilesByColor(raylib::Color color) {
         }
 
         Property* prop = propertyTile->property;
-        if (prop->getPropertyType() == PropertyType::STREET && prop->getColorGroup().r == color.r && prop->getColorGroup().g == color.g && prop->getColorGroup().b == color.b) {
+        if (prop->getPropertyType() == PropertyType::STREET && prop->getColorGroup() == color) {
             result.push_back(tile->index);
         }
     }
@@ -140,15 +140,15 @@ std::vector<int> Board::getTilesByColor(raylib::Color color) {
 
 void Board::initializeDefault(){
 
-    auto colorBrown = raylib::Color{139, 90, 43, 255};
-    auto colorLightBlue = raylib::Color{0, 191, 255, 255};
-    auto colorPink = raylib::Color{255, 105, 180, 255};
-    auto colorOrange = raylib::Color{255, 165, 0, 255};
-    auto colorRed = raylib::Color{220, 20, 60, 255};
-    auto colorYellow = raylib::Color{255, 215, 0, 255};
-    auto colorGreen = raylib::Color{34, 139, 34, 255};
-    auto colorDarkBlue = raylib::Color{0, 0, 139, 255};
-    auto colorGray = raylib::Color{130, 130, 130, 255};
+    auto colorBrown = Color::COKLAT;
+    auto colorLightBlue = Color::BIRU_MUDA;
+    auto colorPink = Color::PINK;
+    auto colorOrange = Color::ORANYE;
+    auto colorRed = Color::MERAH;
+    auto colorYellow = Color::KUNING;
+    auto colorGreen = Color::HIJAU;
+    auto colorDarkBlue = Color::BIRU_TUA;
+    auto colorGray = Color::ABU_ABU;
 
     setTile(new StartTile(0, "GO", "Petak Mulai", "SPESIAL", 200), 0);
     setTile(new PropertyTile(1, "GRT", "Garut", "PROPERTY", new StreetProperty(1, "GRT", "GARUT", 60, 40, colorBrown, 20, 50, {2, 10, 30, 90, 160, 250})), 1);
@@ -196,36 +196,12 @@ void Board::printBoard() {
     GameSession* session = GameApp::currentSession;
 
     // 1. Color Mapping & Translation Table Helpers
-    auto getColorInfo = [](raylib::Color c) -> std::pair<std::string, std::string> {
-        if (c.r == 139 && c.g == 90 && c.b == 43) return {"C", "COKLAT"};
-        if (c.r == 0 && c.g == 191 && c.b == 255) return {"B", "BIRU_MUDA"};
-        if (c.r == 255 && c.g == 105 && c.b == 180) return {"P", "PINK"};
-        if (c.r == 255 && c.g == 165 && c.b == 0) return {"O", "ORANYE"};
-        if (c.r == 220 && c.g == 20 && c.b == 60) return {"M", "MERAH"};
-        if (c.r == 255 && c.g == 215 && c.b == 0) return {"K", "KUNING"};
-        if (c.r == 34 && c.g == 139 && c.b == 34) return {"H", "HIJAU"};
-        if (c.r == 0 && c.g == 0 && c.b == 139) return {"T", "BIRU_TUA"};
-        if (c.r == 130 && c.g == 130 && c.b == 130) return {"A", "ABU_ABU"};
-        if (c.r == 230 && c.g == 41 && c.b == 55) return {"M", "MERAH"};
-        if (c.r == 0 && c.g == 228 && c.b == 48) return {"H", "HIJAU"};
-        if (c.r == 0 && c.g == 121 && c.b == 241) return {"B", "BIRU"};
-        if (c.r == 253 && c.g == 249 && c.b == 0) return {"K", "KUNING"};
-        if (c.r == 127 && c.g == 106 && c.b == 79) return {"C", "COKLAT"};
-        if (c.r == 255 && c.g == 161 && c.b == 0) return {"O", "ORANYE"};
-        if (c.r == 255 && c.g == 109 && c.b == 194) return {"P", "MERAH_MUDA"};
-        if (c.r == 200 && c.g == 122 && c.b == 255) return {"U", "UNGU"};
-        if (c.r == 130 && c.g == 130 && c.b == 130) return {"A", "ABU_ABU"};
-        if (c.r == 255 && c.g == 203 && c.b == 0) return {"E", "EMAS"};
-        if (c.r == 190 && c.g == 33 && c.b == 55) return {"R", "MAROON"};
-        if (c.r == 255 && c.g == 0 && c.b == 255) return {"G", "MAGENTA"};
-        if (c.r == 255 && c.g == 255 && c.b == 255) return {"W", "PUTIH"};
-        if (c.r == 0 && c.g == 0 && c.b == 0) return {"T", "HITAM"};
-        return {" ", ""};
+    auto getColorInfo = [](Color c) -> std::pair<std::string, std::string> {
+        return {colorToShortName(c), colorToString(c)};
     };
 
-    auto getAnsiColor = [](raylib::Color c) {
-        if (c.a == 0) return std::string("\033[0m"); 
-        return "\033[38;2;" + std::to_string(c.r) + ";" + std::to_string(c.g) + ";" + std::to_string(c.b) + "m";
+    auto getAnsiColor = [](Color c) {
+        return colorToAnsi(c);
     };
 
     std::map<std::string, std::string> usedColors;

@@ -83,11 +83,11 @@ int Player::getTotalWealth() {
 }
 
 
-std::vector<Property*> Player::getPropertiesByColor(raylib::Color color) {
+std::vector<Property*> Player::getPropertiesByColor(Color color) {
     std::vector<Property*> res;
     for (auto p : properties) {
         if (p->getPropertyType() == PropertyType::STREET) {
-            if (p->getColorGroup().r == color.r && p->getColorGroup().g == color.g && p->getColorGroup().b == color.b) res.push_back(p);
+            if (p->getColorGroup() == color) res.push_back(p);
         }
     }
     return res;

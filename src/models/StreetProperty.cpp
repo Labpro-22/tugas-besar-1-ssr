@@ -6,7 +6,7 @@
 #include <iomanip>
 
 StreetProperty::StreetProperty(int ID, string code, string name,
-    int price, int mortgageValue, raylib::Color color, int housePrice, int hotelPrice, vector<int> rentLevels)
+    int price, int mortgageValue, Color color, int housePrice, int hotelPrice, vector<int> rentLevels)
     : Property(ID, code, name, "STREET", price, mortgageValue, color),
     housePrice(housePrice),
     hotelPrice(hotelPrice),

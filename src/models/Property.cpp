@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <iomanip>
 
-Property::Property(int ID, string code, string name, string type, int price, int mortgageValue, raylib::Color colorGroup): 
+Property::Property(int ID, string code, string name, string type, int price, int mortgageValue, Color colorGroup): 
         ID(ID), code(code), name(name), type(type), price(price), mortgageValue(mortgageValue), 
         ownerID(-1), status(PropertyStatus::BANK), festivalMultiplier(1), festivalDuration(0), colorGroup(colorGroup){}
 

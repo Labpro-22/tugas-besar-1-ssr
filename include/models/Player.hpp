@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <raylib-cpp.hpp>
+#include "Color.hpp"
 
 class Board;
 class Property;
@@ -43,7 +43,7 @@ public:
     PlayerStatus getStatus(){ return status;}
     int getCardCount();
     std::vector<Property*> &getAllProperties()  { return properties; }
-    std::vector<Property*> getPropertiesByColor(raylib::Color color);
+    std::vector<Property*> getPropertiesByColor(Color color);
     int getOwnedRailroadCount();
     int getOwnedUtilityCount();
 
